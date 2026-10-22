@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,6 +54,8 @@ import com.example.hackchaton_2026_crm.ui.Intents
 import com.example.hackchaton_2026_crm.ui.components.LabeledDivider
 import com.example.hackchaton_2026_crm.ui.components.StageChip
 import com.example.hackchaton_2026_crm.ui.theme.LocalStatusColors
+
+private val HISTORY_WINDOW_HEIGHT = 170.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,7 +149,14 @@ private fun LeadDetailContent(
                 }
             }
         }
-        items(entries, key = { it.id }) { TimelineEntry(it) }
+        if (entries.isNotEmpty()) {
+            item {
+                // Fixed window of about two entries; the history scrolls inside it.
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = HISTORY_WINDOW_HEIGHT)) {
+                    items(entries, key = { it.id }) { TimelineEntry(it) }
+                }
+            }
+        }
         item {
             Column {
                 LabeledDivider("Details")
