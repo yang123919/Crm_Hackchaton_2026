@@ -18,8 +18,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import com.example.hackchaton_2026_crm.ui.components.Button
+import com.example.hackchaton_2026_crm.ui.components.QuickLeadWordmark
+import com.example.hackchaton_2026_crm.ui.theme.Navy
+import com.example.hackchaton_2026_crm.ui.theme.Teal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -95,6 +106,7 @@ fun RegisterScreen(
             supportingText = s.errors[AuthField.NAME]?.let { { Text(it) } },
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
+            colors = authFieldColors(),
             modifier = Modifier.fillMaxWidth(),
         )
         EmailField(s.email, s.errors[AuthField.EMAIL], viewModel::setEmail, ImeAction.Next)
@@ -122,40 +134,66 @@ private fun AuthLayout(
     fields: @Composable () -> Unit,
 ) {
     val focus = LocalFocusManager.current
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()
-                .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    // Deep navy-to-teal brand area on top, light rounded form card below (docs: QuickLead-视觉风格.md).
+    Column(
+        Modifier.fillMaxSize()
+            .background(Brush.linearGradient(listOf(Navy, Teal)))
+            .statusBarsPadding().imePadding(),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 28.dp)) {
+            QuickLeadWordmark(size = 36.sp)
+            Text(
+                "CRM",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.8f),
+                letterSpacing = 6.sp,
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(title, style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Text(subtitle, color = Color.White.copy(alpha = 0.75f))
+        }
+        Surface(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            color = MaterialTheme.colorScheme.background,
         ) {
-            Text("QuickLead", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(16.dp))
-            Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-
-            fields()
-
-            formError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = { focus.clearFocus(); onPrimary() },
-                enabled = !loading,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary)
-                else Text(primaryLabel, style = MaterialTheme.typography.titleMedium)
-            }
-            TextButton(onClick = onSwitch, enabled = !loading, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text(switchLabel)
+                fields()
+
+                formError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                }
+                Spacer(Modifier.height(4.dp))
+                Button(
+                    onClick = { focus.clearFocus(); onPrimary() },
+                    enabled = !loading,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = Navy)
+                    } else {
+                        Text(primaryLabel, style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
+                    }
+                }
+                TextButton(onClick = onSwitch, enabled = !loading, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text(switchLabel)
+                }
             }
         }
     }
 }
+
+/** White (or dark-surface) filled inputs, as in the login wireframe. */
+@Composable
+private fun authFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+)
 
 @Composable
 private fun EmailField(value: String, error: String?, onChange: (String) -> Unit, ime: ImeAction) {
@@ -169,6 +207,7 @@ private fun EmailField(value: String, error: String?, onChange: (String) -> Unit
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ime),
         keyboardActions = KeyboardActions(onNext = { focus.moveFocus(FocusDirection.Down) }),
+        colors = authFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -206,6 +245,7 @@ private fun PasswordField(
                 )
             }
         },
+        colors = authFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
 }

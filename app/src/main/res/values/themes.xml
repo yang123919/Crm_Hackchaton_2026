@@ -1,6 +1,6 @@
 <resources>
     <!-- Compose draws the UI; this only themes the window before Compose starts. -->
     <style name="Theme.QuickLead" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowBackground">@color/ql_window_background</item>
     </style>
 </resources>

@@ -23,8 +23,13 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ButtonDefaults
+import com.example.hackchaton_2026_crm.ui.components.Avatar
+import com.example.hackchaton_2026_crm.ui.theme.Mint
+import com.example.hackchaton_2026_crm.ui.theme.Navy
+import com.example.hackchaton_2026_crm.ui.components.DelayedProgress
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -33,7 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import com.example.hackchaton_2026_crm.ui.components.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -101,7 +106,7 @@ fun LeadDetailScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when {
-                state.loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                state.loading -> DelayedProgress(Modifier.align(Alignment.Center))
                 lead == null -> Text("Customer not found", Modifier.align(Alignment.Center))
                 else -> LeadDetailContent(
                     lead = lead,
@@ -126,19 +131,28 @@ private fun LeadDetailContent(
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp)) {
         item {
             Column {
-                Text(
-                    "${Format.phone(lead.mobile)} · ${lead.product}",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Text(lead.outlet, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(lead.fullName)
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(lead.fullName, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            Format.phone(lead.mobile),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Text("${lead.product} · ${lead.outlet}", style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
                 StageChip(lead.salesStage)
                 Spacer(Modifier.height(16.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ActionButton(Icons.Filled.Call, "Call", Modifier.weight(1f)) { Intents.dial(context, lead.mobile) }
-                    ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), onWhatsApp)
-                    ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onVoiceUpdate)
+                    ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), emphasis = true, onClick = onWhatsApp)
+                    ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onClick = onVoiceUpdate)
                 }
 
                 NextStep(lead)
@@ -181,11 +195,23 @@ private fun LeadDetailContent(
 }
 
 @Composable
-private fun ActionButton(icon: ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
+private fun ActionButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier,
+    emphasis: Boolean = false,
+    onClick: () -> Unit,
+) {
     // Icon above the label so "WhatsApp" fits three-across even with large system fonts.
     FilledTonalButton(
         onClick = onClick,
         modifier = modifier.height(64.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = if (emphasis) {
+            ButtonDefaults.filledTonalButtonColors(containerColor = Mint, contentColor = Navy)
+        } else {
+            ButtonDefaults.filledTonalButtonColors()
+        },
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

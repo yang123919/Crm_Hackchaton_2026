@@ -7,7 +7,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.hackchaton_2026_crm.reminder.Reminders
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.graphics.toArgb
+import com.example.hackchaton_2026_crm.ui.theme.Navy
 import com.example.hackchaton_2026_crm.ui.navigation.QuickLeadNavHost
 import com.example.hackchaton_2026_crm.ui.theme.QuickLeadTheme
 
@@ -20,7 +23,8 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null && !Reminders.canNotify(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        enableEdgeToEdge()
+        // Every screen starts with a dark navy bar or brand area, so the status bar icons stay light.
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Navy.toArgb()))
         setContent {
             QuickLeadTheme {
                 QuickLeadNavHost()

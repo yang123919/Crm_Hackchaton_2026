@@ -2,6 +2,11 @@ package com.example.hackchaton_2026_crm.ui.navigation
 
 import android.os.SystemClock
 import android.widget.Toast
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -115,7 +120,16 @@ private fun AppNav(authState: AuthState) {
         }
     }
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    // The default is a 700ms cross-fade, which leaves both screens' bars ghosting over each other and
+    // reads as a "refresh". Short transitions keep the old screen from showing through.
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        enterTransition = { fadeIn(tween(160)) + slideInHorizontally(tween(220)) { it / 10 } },
+        exitTransition = { fadeOut(tween(100)) },
+        popEnterTransition = { fadeIn(tween(160)) },
+        popExitTransition = { fadeOut(tween(120)) + slideOutHorizontally(tween(200)) { it / 10 } },
+    ) {
         composable<LoginRoute> {
             LoginScreen(onGoToRegister = { go(RegisterRoute) })
         }

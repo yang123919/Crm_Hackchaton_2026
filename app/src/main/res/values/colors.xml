@@ -2,4 +2,6 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Window colour shown before Compose draws and between screen transitions; matches the app background. -->
+    <color name="ql_window_background">#FFF8FAFC</color>
 </resources>

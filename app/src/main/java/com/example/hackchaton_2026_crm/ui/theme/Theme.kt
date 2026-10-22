@@ -1,7 +1,10 @@
 package com.example.hackchaton_2026_crm.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -9,59 +12,91 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
-// CS Group CRM palette: red brand colour on neutral greys.
-val CsRed = Color(0xFFC8102E)
-val CsRedDark = Color(0xFF9B0B22)
-val CsRedLight = Color(0xFFFFB3B5)
-val CsGrey = Color(0xFF4A4F55)
-val CsGreyLight = Color(0xFFF2F3F5)
-val CsGreyMid = Color(0xFFDADDE1)
+// QuickLead palette (docs: QuickLead-视觉风格.md): deep navy and teal for structure, mint for actions.
+val Navy = Color(0xFF0B1B33)
+val Teal = Color(0xFF103B4B)
+val Mint = Color(0xFF55DFC2)
+val MintLight = Color(0xFFDDF8F1)
+val FormBackground = Color(0xFFF8FAFC)
+
+/** Mint is too pale for text on white (about 1.6:1), so links and outlines use this deeper teal. */
+val LinkTeal = Color(0xFF0A7F73)
+
+private val InkMuted = Color(0xFF4A5B6D)
 
 private val LightColors = lightColorScheme(
-    primary = CsRed,
+    primary = LinkTeal,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFDAD9),
-    onPrimaryContainer = Color(0xFF410006),
-    secondary = CsGrey,
+    primaryContainer = MintLight,
+    onPrimaryContainer = Navy,
+    secondary = Teal,
     onSecondary = Color.White,
-    secondaryContainer = CsGreyMid,
-    onSecondaryContainer = Color(0xFF1D2024),
-    tertiary = Color(0xFF6B5E00),
-    background = Color.White,
-    onBackground = Color(0xFF1D2024),
+    secondaryContainer = MintLight,
+    onSecondaryContainer = Navy,
+    tertiary = Color(0xFF9A6200),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFF1D6),
+    onTertiaryContainer = Color(0xFF3B2600),
+    background = FormBackground,
+    onBackground = Navy,
     surface = Color.White,
-    onSurface = Color(0xFF1D2024),
-    surfaceVariant = CsGreyLight,
-    onSurfaceVariant = CsGrey,
+    onSurface = Navy,
+    surfaceVariant = Color(0xFFE9EFF4),
+    onSurfaceVariant = InkMuted,
     surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF8F9FA),
-    surfaceContainer = CsGreyLight,
-    surfaceContainerHigh = Color(0xFFEBEDF0),
-    surfaceContainerHighest = CsGreyMid,
-    outline = Color(0xFF8A9097),
-    outlineVariant = CsGreyMid,
+    surfaceContainerLow = Color.White,
+    surfaceContainer = Color(0xFFEEF3F7),
+    surfaceContainerHigh = Color(0xFFE6EDF2),
+    surfaceContainerHighest = Color(0xFFDDE6EE),
+    outline = Color(0xFF7A8A9A),
+    outlineVariant = Color(0xFFD5DEE6),
     error = Color(0xFFB3261E),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = CsRedLight,
-    onPrimary = Color(0xFF680011),
-    primaryContainer = CsRedDark,
-    onPrimaryContainer = Color(0xFFFFDAD9),
-    secondary = Color(0xFFC3C7CD),
-    onSecondary = Color(0xFF2D3136),
-    secondaryContainer = CsGrey,
-    onSecondaryContainer = Color(0xFFE1E3E6),
-    background = Color(0xFF16181B),
-    surface = Color(0xFF16181B),
-    surfaceVariant = Color(0xFF2D3136),
-    onSurfaceVariant = Color(0xFFC3C7CD),
-    surfaceContainer = Color(0xFF212428),
-    surfaceContainerHigh = Color(0xFF2B2E33),
-    outline = Color(0xFF8D9399),
-    outlineVariant = Color(0xFF41464C),
+    primary = Mint,
+    onPrimary = Navy,
+    primaryContainer = Color(0xFF0F4A47),
+    onPrimaryContainer = MintLight,
+    secondary = Color(0xFF9FD8CB),
+    onSecondary = Navy,
+    secondaryContainer = Color(0xFF0F4A47),
+    onSecondaryContainer = MintLight,
+    tertiary = Color(0xFFFFCF7A),
+    background = Color(0xFF0E2238),
+    onBackground = Color(0xFFEAF2F7),
+    surface = Color(0xFF0E2238),
+    onSurface = Color(0xFFEAF2F7),
+    surfaceVariant = Color(0xFF1B3552),
+    onSurfaceVariant = Color(0xFFB7C7D6),
+    surfaceContainerLow = Color(0xFF12294A),
+    surfaceContainer = Color(0xFF15304F),
+    surfaceContainerHigh = Color(0xFF1A3859),
+    surfaceContainerHighest = Color(0xFF204363),
+    outline = Color(0xFF6F8BA3),
+    outlineVariant = Color(0xFF27425E),
 )
+
+/** Rounded inputs and cards, as in the wireframes. */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
+private val AppTypography = Typography().let {
+    it.copy(
+        headlineMedium = it.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        headlineSmall = it.headlineSmall.copy(fontWeight = FontWeight.Bold),
+        titleLarge = it.titleLarge.copy(fontWeight = FontWeight.Bold),
+        titleMedium = it.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+    )
+}
 
 /** Status colours used for follow-up urgency (not part of the M3 scheme). */
 @Immutable
@@ -104,6 +139,8 @@ fun QuickLeadTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColors else LightColors,
+            shapes = AppShapes,
+            typography = AppTypography,
             content = content,
         )
     }

@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
@@ -34,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -56,8 +54,22 @@ import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadGroup
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.Intents
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.hackchaton_2026_crm.ui.components.DelayedProgress
+import com.example.hackchaton_2026_crm.ui.components.QuickLeadWordmark
 import com.example.hackchaton_2026_crm.ui.components.SectionHeader
+import com.example.hackchaton_2026_crm.ui.components.TopAppBar
+import com.example.hackchaton_2026_crm.ui.theme.LinkTeal
 import com.example.hackchaton_2026_crm.ui.theme.LocalStatusColors
+import com.example.hackchaton_2026_crm.ui.theme.Mint
+import com.example.hackchaton_2026_crm.ui.theme.MintLight
+import com.example.hackchaton_2026_crm.ui.theme.Navy
+import com.example.hackchaton_2026_crm.ui.theme.Teal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,16 +88,14 @@ fun TodayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("QuickLead", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                },
+                title = { QuickLeadWordmark() },
                 actions = {
                     if (state.demoMode) {
                         Text(
                             "DEMO",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.padding(end = 4.dp),
                         )
                     }
@@ -102,8 +112,9 @@ fun TodayScreen(
                 onClick = onCapture,
                 icon = { Icon(Icons.Filled.PersonAdd, null) },
                 text = { Text("Capture customer", style = MaterialTheme.typography.titleMedium) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = Mint,
+                contentColor = Navy,
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.height(64.dp),
             )
         },
@@ -111,7 +122,7 @@ fun TodayScreen(
     ) { padding ->
         if (state.loading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                DelayedProgress()
             }
             return@Scaffold
         }
@@ -120,7 +131,24 @@ fun TodayScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
         ) {
             item {
-                Text(state.greeting, style = MaterialTheme.typography.titleLarge)
+                Box(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.linearGradient(listOf(Navy, Teal)), RoundedCornerShape(20.dp))
+                        .padding(20.dp),
+                ) {
+                    Column {
+                        Text(
+                            state.greeting,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                        )
+                        Text(
+                            Format.longDate(Format.today()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.75f),
+                        )
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 CounterRow(state, onOpenGroup)
                 state.avgCaptureSeconds?.let { TimeSaved(it) }
@@ -175,22 +203,31 @@ private fun TimeSaved(seconds: Int) {
 private fun CounterRow(state: TodayUiState, onOpenGroup: (LeadGroup) -> Unit) {
     val status = LocalStatusColors.current
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Counter(state.overdue.size, "Overdue", status.overdue, status.overdueContainer, Modifier.weight(1f)) {
-            onOpenGroup(LeadGroup.OVERDUE)
-        }
-        Counter(state.dueToday.size, "Today", status.dueToday, status.dueTodayContainer, Modifier.weight(1f)) {
-            onOpenGroup(LeadGroup.DUE_TODAY)
-        }
         Counter(
-            state.capturedThisWeek, "This wk\ncaptured",
-            MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.surfaceContainer,
-            Modifier.weight(1f),
+            state.overdue.size, "Overdue", Icons.Filled.Warning,
+            status.overdue, status.overdueContainer, Modifier.weight(1f),
+        ) { onOpenGroup(LeadGroup.OVERDUE) }
+        Counter(
+            state.dueToday.size, "Today", Icons.Filled.EventAvailable,
+            status.dueToday, status.dueTodayContainer, Modifier.weight(1f),
+        ) { onOpenGroup(LeadGroup.DUE_TODAY) }
+        Counter(
+            state.capturedThisWeek, "This wk\ncaptured", Icons.Filled.PersonAdd,
+            LinkTeal, MintLight, Modifier.weight(1f),
         ) { onOpenGroup(LeadGroup.CAPTURED_THIS_WEEK) }
     }
 }
 
 @Composable
-private fun Counter(value: Int, label: String, color: Color, container: Color, modifier: Modifier, onClick: () -> Unit) {
+private fun Counter(
+    value: Int,
+    label: String,
+    icon: ImageVector,
+    color: Color,
+    container: Color,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
     Card(
         onClick = onClick,
         modifier = modifier,
@@ -200,6 +237,7 @@ private fun Counter(value: Int, label: String, color: Color, container: Color, m
             Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
             Text("$value", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = color)
             Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, color = color)
         }
@@ -219,6 +257,11 @@ private fun FollowUpCard(lead: Lead, onOpen: () -> Unit, onCall: () -> Unit, onW
     ) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(10.dp)
+                        .background(if (overdue) status.overdue else status.dueToday, CircleShape),
+                )
+                Spacer(Modifier.width(10.dp))
                 Text(
                     lead.fullName,
                     style = MaterialTheme.typography.titleMedium,
