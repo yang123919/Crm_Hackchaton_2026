@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -119,48 +119,54 @@ private fun LeadDetailContent(
     onVoiceUpdate: () -> Unit,
 ) {
     val context = LocalContext.current
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
-    ) {
-        Text(
-            "${Format.phone(lead.mobile)} · ${lead.product}",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Text(lead.outlet, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
-        StageChip(lead.salesStage)
-        Spacer(Modifier.height(16.dp))
+    // LazyColumn is Compose's RecyclerView: history rows are only composed while on screen.
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp)) {
+        item {
+            Column {
+                Text(
+                    "${Format.phone(lead.mobile)} · ${lead.product}",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(lead.outlet, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                StageChip(lead.salesStage)
+                Spacer(Modifier.height(16.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionButton(Icons.Filled.Call, "Call", Modifier.weight(1f)) { Intents.dial(context, lead.mobile) }
-            ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), onWhatsApp)
-            ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onVoiceUpdate)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActionButton(Icons.Filled.Call, "Call", Modifier.weight(1f)) { Intents.dial(context, lead.mobile) }
+                    ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), onWhatsApp)
+                    ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onVoiceUpdate)
+                }
+
+                NextStep(lead)
+
+                LabeledDivider("Follow-up history")
+                if (entries.isEmpty()) {
+                    Text("No history yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
-
-        NextStep(lead)
-
-        LabeledDivider("Follow-up history")
-        if (entries.isEmpty()) {
-            Text("No history yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        items(entries, key = { it.id }) { TimelineEntry(it) }
+        item {
+            Column {
+                LabeledDivider("Details")
+                DetailRow("Budget", lead.budgetRm?.let(Format::rm))
+                DetailRow(
+                    "Trade-in",
+                    if (lead.tradeInUsedCar) {
+                        listOfNotNull(lead.tradeInBrand, lead.tradeInModel, lead.tradeInYear?.toString())
+                            .joinToString(" ").ifBlank { "Yes" }
+                    } else "No",
+                )
+                DetailRow("Close date", lead.expectedCloseDate?.let(Format::longDate))
+                DetailRow("Email", lead.email)
+                DetailRow("IC", lead.maskedIc)
+                DetailRow("Gender", lead.gender)
+                DetailRow("Address", lead.address)
+                DetailRow("Status", lead.status)
+                Spacer(Modifier.height(24.dp))
+            }
         }
-        entries.forEach { TimelineEntry(it) }
-
-        LabeledDivider("Details")
-        DetailRow("Budget", lead.budgetRm?.let(Format::rm))
-        DetailRow(
-            "Trade-in",
-            if (lead.tradeInUsedCar) {
-                listOfNotNull(lead.tradeInBrand, lead.tradeInModel, lead.tradeInYear?.toString())
-                    .joinToString(" ").ifBlank { "Yes" }
-            } else "No",
-        )
-        DetailRow("Close date", lead.expectedCloseDate?.let(Format::longDate))
-        DetailRow("Email", lead.email)
-        DetailRow("IC", lead.maskedIc)
-        DetailRow("Gender", lead.gender)
-        DetailRow("Address", lead.address)
-        DetailRow("Status", lead.status)
-        Spacer(Modifier.height(24.dp))
     }
 }
 
