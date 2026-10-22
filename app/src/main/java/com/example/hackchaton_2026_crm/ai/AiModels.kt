@@ -44,6 +44,10 @@ data class LeadExtraction(
     @SerialName("follow_up") val followUp: FollowUpPart = FollowUpPart(),
     @SerialName("suggested_sales_stage") val suggestedSalesStage: String? = null,
     @SerialName("low_confidence_fields") val lowConfidenceFields: List<String> = emptyList(),
+    /** YYMMDD-PB-#### when the notes mention one (typed, or read from a scanned form). */
+    @SerialName("ic_number") val icNumber: String? = null,
+    val address: String? = null,
+    val gender: String? = null,
 )
 
 /** Raw AI answer for a spoken follow-up update on an existing customer. */

@@ -1,6 +1,7 @@
 package com.example.hackchaton_2026_crm.ai
 
 import com.example.hackchaton_2026_crm.data.ReferenceLists
+import com.example.hackchaton_2026_crm.ocr.IcNumbers
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -55,6 +56,9 @@ data class NormalizedLead(
     val nextAction: String = "",
     val nextDate: LocalDate? = null,
     val salesStage: String = ReferenceLists.DEFAULT_STAGE,
+    val icNumber: String = "",
+    val address: String = "",
+    val gender: String = "",
     val summary: String = "",
     val aiFilled: Set<LeadField> = emptySet(),
     val lowConfidence: Set<LeadField> = emptySet(),
@@ -282,6 +286,13 @@ object Normalizer {
 
     fun resolveRelativeDate(text: String, today: LocalDate): LocalDate? = findDates(text, today).firstOrNull()?.second
 
+    /** "male", "Lelaki", "M" -> "Male"; "female", "Perempuan", "F" -> "Female"; anything else -> null. */
+    fun gender(raw: String?): String? = when (raw?.trim()?.lowercase()) {
+        "male", "m", "lelaki", "l" -> "Male"
+        "female", "f", "perempuan", "p", "wanita" -> "Female"
+        else -> null
+    }
+
     // ---- Names & misc -----------------------------------------------------------------
 
     private val titles = Regex(
@@ -348,6 +359,9 @@ object Normalizer {
                 .also { if (it == null && e.followUp.nextDate != null) low += LeadField.NEXT_DATE },
             salesStage = option(LeadField.STAGE, e.suggestedSalesStage, ReferenceLists.salesStages)
                 ?: ReferenceLists.DEFAULT_STAGE,
+            icNumber = track(LeadField.IC_NUMBER, e.icNumber?.let { IcNumbers.normalize(it, today) }).orEmpty(),
+            address = track(LeadField.ADDRESS, e.address?.trim()).orEmpty(),
+            gender = track(LeadField.GENDER, gender(e.gender)).orEmpty(),
             summary = track(LeadField.SUMMARY, e.followUp.summary.trim()).orEmpty(),
             aiFilled = filled,
             lowConfidence = low,

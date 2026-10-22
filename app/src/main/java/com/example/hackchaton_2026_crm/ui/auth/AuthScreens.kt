@@ -55,7 +55,7 @@ fun LoginScreen(
     val s by viewModel.state.collectAsStateWithLifecycle()
     AuthLayout(
         title = "Welcome back",
-        subtitle = "Sign in to capture customers by voice.",
+        subtitle = "Sign in to capture customers in seconds.",
         loading = s.loading,
         formError = s.formError,
         primaryLabel = "Sign in",

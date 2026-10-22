@@ -4,14 +4,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- Lets SpeechRecognizer find the system speech service on Android 11+. -->
     <queries>
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
-        <!-- Lets the app hand off to the camera app to photograph an IC. -->
+        <!-- Lets the app hand off to the camera app to photograph an IC or a form. -->
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>

@@ -51,15 +51,13 @@ import com.example.hackchaton_2026_crm.ui.components.DateField
 import com.example.hackchaton_2026_crm.ui.components.Dropdown
 import com.example.hackchaton_2026_crm.ui.components.FormTextField
 import com.example.hackchaton_2026_crm.ui.components.LabeledDivider
-import com.example.hackchaton_2026_crm.ui.components.MicButton
-import com.example.hackchaton_2026_crm.ui.components.rememberSpeechController
 import com.example.hackchaton_2026_crm.ui.components.StageChip
 import com.example.hackchaton_2026_crm.ui.theme.LocalStatusColors
 
 /** Sample line 4 from docs/PLAN.md. */
 private const val SAMPLE = "Called Mr Tan, he's ok with the price, booking this weekend."
 
-/** 6. Voice update: speak or type what happened, AI turns it into a log entry. */
+/** 6. Update: type what happened after a call or visit; AI turns it into a log entry. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FollowUpScreen(
@@ -69,7 +67,6 @@ fun FollowUpScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.saved.collect { onSaved() } }
-    val speech = rememberSpeechController()
 
     Scaffold(
         topBar = {
@@ -117,13 +114,9 @@ fun FollowUpScreen(
                 }
             }
 
-            MicButton(
-                speech, state.transcript, onTextChange = viewModel::setTranscript,
-                modifier = Modifier.align(Alignment.CenterHorizontally), size = 88.dp,
-            )
             OutlinedTextField(
                 value = state.transcript,
-                onValueChange = { speech.stop(); viewModel.setTranscript(it) },
+                onValueChange = viewModel::setTranscript,
                 label = { Text("What happened?") },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
@@ -137,7 +130,7 @@ fun FollowUpScreen(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 FilledTonalButton(
-                    onClick = { speech.stop(); viewModel.process(forceDemo = false) },
+                    onClick = { viewModel.process(forceDemo = false) },
                     enabled = state.transcript.isNotBlank() && !state.working,
                 ) {
                     Text(if (state.draft?.fromAi == true) "Process again" else "Process with AI")

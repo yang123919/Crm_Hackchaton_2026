@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -95,7 +95,7 @@ fun TodayScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onCapture,
-                icon = { Icon(Icons.Filled.Mic, null) },
+                icon = { Icon(Icons.Filled.PersonAdd, null) },
                 text = { Text("Capture customer", style = MaterialTheme.typography.titleMedium) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,

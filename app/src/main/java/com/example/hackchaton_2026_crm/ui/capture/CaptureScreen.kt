@@ -30,27 +30,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.remember
-import com.example.hackchaton_2026_crm.ui.components.MicButton
-import com.example.hackchaton_2026_crm.ui.components.rememberSpeechController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hackchaton_2026_crm.ocr.IcInfo
 
-/** Sample voice lines from docs/PLAN.md, one tap to fill for the demo. */
+/** Example notes, one tap to fill for a quick try. */
 private val samples = listOf(
     "Just met Mr Tan Ah Kow, 012-345 6789, interested in the X50, budget around 120k, wants test drive next Tuesday, call him back Friday.",
-    "Puan Aisyah, one seven three two two eight nine nine one zero, nak Saga, trade in Myvi 2018, follow up esok.",
+    "Puan Aisyah, 017-322 8991, nak Saga, trade in Myvi 2018, follow up esok.",
     "Mr Lim from Butterworth, wants the Tiggo 8 Pro, no budget yet, send him quotation, WhatsApp him tomorrow.",
 )
 
-/** 2. Capture: speak (live, editable transcript) or type; then Process with AI. */
+/**
+ * 2. Capture: scan an IC and/or a customer form, or type notes; then Process with AI.
+ * Scanned form text lands in the notes box, where it can be corrected first.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaptureScreen(
@@ -59,10 +54,10 @@ fun CaptureScreen(
 ) {
     val startedAt by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
     var text by rememberSaveable { mutableStateOf("") }
-    val speech = rememberSpeechController()
-    val focus = remember { FocusRequester() }
-    val icScan = rememberIcScan()
-    val canProcess = (text.isNotBlank() || icScan.info != null) && !icScan.scanning
+    val scan = rememberScan(onFormText = { scanned ->
+        text = listOf(text.trim(), scanned).filter { it.isNotEmpty() }.joinToString("\n")
+    })
+    val canProcess = (text.isNotBlank() || scan.ic != null) && !scan.busy
 
     Scaffold(
         topBar = {
@@ -75,13 +70,13 @@ fun CaptureScreen(
         },
         bottomBar = {
             Button(
-                onClick = { speech.stop(); onProcess(text.trim(), startedAt, icScan.info) },
+                onClick = { onProcess(text.trim(), startedAt, scan.ic) },
                 enabled = canProcess,
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
                     .padding(16.dp).height(56.dp),
             ) {
                 Text(
-                    if (text.isBlank() && icScan.info != null) "Review details" else "Process with AI",
+                    if (text.isBlank() && scan.ic != null) "Review details" else "Process with AI",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(Modifier.width(8.dp))
@@ -94,27 +89,18 @@ fun CaptureScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Tell me about the customer: name, phone, car, budget, next step.",
+                "Scan an IC or a customer form, or type your notes.",
                 style = MaterialTheme.typography.titleMedium,
             )
-            IcScanSection(icScan)
-            MicButton(speech, text, onTextChange = { text = it }, modifier = Modifier.align(Alignment.CenterHorizontally))
+            ScanSection(scan)
             OutlinedTextField(
                 value = text,
-                onValueChange = {
-                    // Typing while the mic is on would be overwritten by the next phrase.
-                    speech.stop()
-                    text = it
-                },
-                label = { Text(if (speech.listening) "Live transcript" else "Notes (editable)") },
+                onValueChange = { text = it },
+                label = { Text("Notes (editable)") },
+                supportingText = { Text("Name, phone, car, budget, next step. Scanned form text appears here.") },
                 minLines = 5,
-                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = { speech.stop(); focus.requestFocus() }) {
-                Icon(Icons.Filled.Keyboard, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Type instead")
-            }
             Text("Try a sample", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             samples.forEach { sample ->
                 SuggestionChip(

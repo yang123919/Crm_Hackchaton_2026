@@ -24,10 +24,10 @@ object AiPrompts {
         (e.g. "esok" = tomorrow, "lusa" = day after tomorrow, "nak" = wants, "minggu depan" = next week).
         Today is ${todayFormat.format(today)} in Asia/Kuala_Lumpur. Resolve relative dates
         ("next Tuesday", "Friday", "esok", "this weekend") to YYYY-MM-DD. Follow-up dates are never in the past.
-        The text was produced by speech recognition and may contain mis-heard words: model names heard as
-        ordinary words ("ex fifty" = X50, "tiger eight" = Tiggo 8), Malay names split or misspelt, digits
-        spelled out ("zero one two" = 012), and missing punctuation. Use the allowed lists below to resolve
-        such mistakes when one option is clearly meant, but never guess between several.
+        The text is typed notes or text read from a photographed form by OCR, so it may contain typos or
+        misread characters (O for 0, l for 1), mixed English and Malay, and form labels such as "Nama:" or
+        "No. Tel:". Use the allowed lists below to resolve such mistakes when one option is clearly meant,
+        but never guess between several.
         Never invent data: anything not said is null.
         suggested_sales_stage must be exactly one of: ${ReferenceLists.salesStages.joinToString(" | ")}; or null.
     """.trimIndent()
@@ -44,6 +44,8 @@ object AiPrompts {
         follow_up.summary: one or two short English sentences written as a CRM log entry.
         follow_up.next_action: a short imperative, e.g. "Call back about test drive".
         follow_up.next_date: when the salesperson should act next.
+        ic_number: a Malaysian IC number written YYMMDD-PB-####, only if one is in the notes.
+        address: the customer's address as written, only if given. gender: "Male" or "Female" only if stated.
         Put the names of fields you are unsure about (e.g. "mobile", "last_name") in low_confidence_fields.
     """.trimIndent()
 
@@ -97,6 +99,9 @@ object AiPrompts {
             }
             putJsonObject("follow_up") { followUpSchema() }
             nullableString("suggested_sales_stage", ReferenceLists.salesStages)
+            nullableString("ic_number")
+            nullableString("address")
+            nullableString("gender", listOf("Male", "Female"))
             putJsonObject("low_confidence_fields") {
                 put("type", "ARRAY")
                 putJsonObject("items") { put("type", "STRING") }

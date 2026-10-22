@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -106,7 +106,7 @@ private fun LeadDetailContent(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ActionButton(Icons.Filled.Call, "Call", Modifier.weight(1f)) { Intents.dial(context, lead.mobile) }
             ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), onWhatsApp)
-            ActionButton(Icons.Filled.Mic, "Update", Modifier.weight(1f), onVoiceUpdate)
+            ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onVoiceUpdate)
         }
 
         NextStep(lead)

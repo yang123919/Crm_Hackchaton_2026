@@ -17,6 +17,10 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
 
     override suspend fun extractLead(transcript: String, today: LocalDate): LeadExtraction {
         delay(delayMs)
+        return FormExtraction.enrich(extractFreeText(transcript, today), transcript, today)
+    }
+
+    private fun extractFreeText(transcript: String, today: LocalDate): LeadExtraction {
         val text = Normalizer.spokenDigitsToNumbers(transcript)
         val lower = text.lowercase()
 
