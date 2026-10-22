@@ -12,6 +12,7 @@ import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadRepository
 import com.example.hackchaton_2026_crm.data.SettingsRepository
 import com.example.hackchaton_2026_crm.ocr.IcInfo
+import com.example.hackchaton_2026_crm.speech.SpeechCorrector
 import com.example.hackchaton_2026_crm.ocr.IcNumbers
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.containerFactory
@@ -99,7 +100,7 @@ class ReviewViewModel(
             try {
                 val demo = forceDemo || ai.usesDemo()
                 val today = Format.today()
-                val extraction = (if (demo) ai.demo else ai).extractLead(transcript, today)
+                val extraction = (if (demo) ai.demo else ai).extractLead(SpeechCorrector.fix(transcript), today)
                 val form = LeadForm.from(Normalizer.normalizeLead(extraction, today), settings.current().defaultOutlet)
                     .withIc(ic)
                 _state.update { it.copy(phase = ReviewPhase.Editing, form = form, usedDemo = demo) }

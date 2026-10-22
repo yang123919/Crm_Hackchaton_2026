@@ -53,6 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.hackchaton_2026_crm.speech.SpeechCorrector
+import com.example.hackchaton_2026_crm.speech.SpeechRanker
+import com.example.hackchaton_2026_crm.speech.SpeechVocabulary
 import kotlinx.coroutines.delay
 
 /**
@@ -87,6 +90,10 @@ class SpeechController internal constructor(private val context: Context) {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-MY")
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3_000L)
+        // Several alternatives, so SpeechRanker can prefer the one with our car names or a valid phone number.
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+        // Hints the recogniser to favour our vocabulary (honoured on Android 13+, ignored before).
+        putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, ArrayList(SpeechVocabulary.biasingStrings))
     }
 
     fun hasPermission() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
@@ -142,16 +149,23 @@ class SpeechController internal constructor(private val context: Context) {
 
     private fun join(a: String, b: String) = listOf(a, b).filter { it.isNotBlank() }.joinToString(" ")
 
-    private fun Bundle?.firstResult(): String =
-        this?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+    /** The best of the recogniser's alternatives, with model names and digits corrected. */
+    private fun Bundle?.bestResult(): String {
+        val candidates = this?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
+        return SpeechRanker.pickBest(candidates, this?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES))
+    }
+
+    /** Live words while speaking: just the top guess, corrected. */
+    private fun Bundle?.partialResult(): String =
+        SpeechCorrector.fix(this?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty())
 
     private val listener = object : RecognitionListener {
         override fun onPartialResults(partialResults: Bundle?) {
-            onText(join(base, partialResults.firstResult()))
+            onText(join(base, partialResults.partialResult()))
         }
 
         override fun onResults(results: Bundle?) {
-            base = join(base, results.firstResult())
+            base = join(base, results.bestResult())
             onText(base)
             if (listening) listen()
         }

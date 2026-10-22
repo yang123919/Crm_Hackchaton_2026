@@ -197,12 +197,42 @@ object Normalizer {
         if (contains.size == 1) return contains.single()
         if (contains.size > 1) return null
 
+        nearMiss(sv, options)?.let { return it }
+
         val words = v.lowercase().split(Regex("""[^a-z0-9]+""")).filter { it.length >= 2 }.toSet()
         val scored = options.map { opt ->
             opt to opt.lowercase().split(Regex("""[^a-z0-9]+""")).count { it in words }
         }.filter { it.second > 0 }
         val best = scored.maxOfOrNull { it.second } ?: return null
         return scored.filter { it.second == best }.singleOrNull()?.first
+    }
+
+    /**
+     * A misspelt or mis-heard word that is one edit away from exactly one option's word:
+     * "ionic" for "Ioniq", "tigo" for "Tiggo". Words under 4 letters never match this way
+     * (too many look-alikes), and two equally close options give no answer.
+     */
+    private fun nearMiss(squashed: String, options: List<String>): String? {
+        if (squashed.length < 4) return null
+        val close = options.filter { opt ->
+            opt.lowercase().split(Regex("""[^a-z0-9]+""")).any { token ->
+                token.length >= 4 && editDistance(squashed, token) <= 1
+            }
+        }
+        return close.singleOrNull()
+    }
+
+    internal fun editDistance(a: String, b: String): Int {
+        if (kotlin.math.abs(a.length - b.length) > 1) return 2
+        var prev = IntArray(b.length + 1) { it }
+        for (i in 1..a.length) {
+            val cur = IntArray(b.length + 1).also { it[0] = i }
+            for (j in 1..b.length) {
+                cur[j] = minOf(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1)
+            }
+            prev = cur
+        }
+        return prev[b.length]
     }
 
     // ---- Dates ------------------------------------------------------------------------

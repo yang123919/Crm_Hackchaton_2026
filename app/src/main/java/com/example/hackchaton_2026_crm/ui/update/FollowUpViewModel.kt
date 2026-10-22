@@ -11,6 +11,7 @@ import com.example.hackchaton_2026_crm.data.CaptureMetric
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadRepository
+import com.example.hackchaton_2026_crm.speech.SpeechCorrector
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.containerFactory
 import com.example.hackchaton_2026_crm.ui.navigation.FollowUpRoute
@@ -83,7 +84,7 @@ class FollowUpViewModel(
             try {
                 val demo = forceDemo || ai.usesDemo()
                 val today = Format.today()
-                val raw = (if (demo) ai.demo else ai).extractFollowUp(transcript, lead, today)
+                val raw = (if (demo) ai.demo else ai).extractFollowUp(SpeechCorrector.fix(transcript), lead, today)
                 val n = Normalizer.normalizeFollowUp(raw, lead.salesStage, today)
                 _state.update {
                     it.copy(

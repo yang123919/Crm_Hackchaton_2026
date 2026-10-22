@@ -24,6 +24,10 @@ object AiPrompts {
         (e.g. "esok" = tomorrow, "lusa" = day after tomorrow, "nak" = wants, "minggu depan" = next week).
         Today is ${todayFormat.format(today)} in Asia/Kuala_Lumpur. Resolve relative dates
         ("next Tuesday", "Friday", "esok", "this weekend") to YYYY-MM-DD. Follow-up dates are never in the past.
+        The text was produced by speech recognition and may contain mis-heard words: model names heard as
+        ordinary words ("ex fifty" = X50, "tiger eight" = Tiggo 8), Malay names split or misspelt, digits
+        spelled out ("zero one two" = 012), and missing punctuation. Use the allowed lists below to resolve
+        such mistakes when one option is clearly meant, but never guess between several.
         Never invent data: anything not said is null.
         suggested_sales_stage must be exactly one of: ${ReferenceLists.salesStages.joinToString(" | ")}; or null.
     """.trimIndent()
