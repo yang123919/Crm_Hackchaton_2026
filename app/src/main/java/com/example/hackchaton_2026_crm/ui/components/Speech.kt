@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -73,6 +75,9 @@ class SpeechController internal constructor(private val context: Context) {
     val available: Boolean = SpeechRecognizer.isRecognitionAvailable(context)
 
     private var recognizer: SpeechRecognizer? = null
+    private val main = Handler(Looper.getMainLooper())
+    /** Consecutive "busy"/client errors; the recognizer is rebuilt a few times before giving up. */
+    private var retries = 0
     /** Text before the phrase currently being heard. */
     private var base = ""
     private var onText: (String) -> Unit = {}
@@ -96,6 +101,7 @@ class SpeechController internal constructor(private val context: Context) {
         base = current.trim()
         this.onText = onText
         error = null
+        retries = 0
         listening = true
         listen()
     }
@@ -109,17 +115,29 @@ class SpeechController internal constructor(private val context: Context) {
 
     fun release() {
         listening = false
+        main.removeCallbacksAndMessages(null)
         recognizer?.destroy()
         recognizer = null
     }
 
     private fun listen() {
-        val r = recognizer ?: SpeechRecognizer.createSpeechRecognizer(context).also {
-            it.setRecognitionListener(listener)
-            recognizer = it
+        val existing = recognizer
+        if (existing != null) {
+            existing.cancel()
+            existing.startListening(intent)
+        } else {
+            SpeechRecognizer.createSpeechRecognizer(context).also {
+                it.setRecognitionListener(listener)
+                recognizer = it
+            }.startListening(intent)
         }
-        r.cancel()
-        r.startListening(intent)
+    }
+
+    /** Busy mic (e.g. a call) or a recognizer that wasn't ready: rebuild it and try again shortly. */
+    private fun rebuildAndListen() {
+        recognizer?.destroy()
+        recognizer = null
+        main.postDelayed({ if (listening) listen() }, 400)
     }
 
     private fun join(a: String, b: String) = listOf(a, b).filter { it.isNotBlank() }.joinToString(" ")
@@ -142,6 +160,11 @@ class SpeechController internal constructor(private val context: Context) {
             when {
                 // Silence or nothing understood: keep going until the user taps stop.
                 listening && (code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) -> listen()
+                listening && retries < 3 &&
+                    (code == SpeechRecognizer.ERROR_CLIENT || code == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) -> {
+                    retries++
+                    rebuildAndListen()
+                }
                 code == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
                     listening = false
                     permissionDenied = true
@@ -152,6 +175,8 @@ class SpeechController internal constructor(private val context: Context) {
                     error = when (code) {
                         SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
                         SpeechRecognizer.ERROR_SERVER -> "No connection for speech. Type instead."
+                        SpeechRecognizer.ERROR_AUDIO, SpeechRecognizer.ERROR_RECOGNIZER_BUSY ->
+                            "Mic is busy (call in progress?). Tap to try again."
                         else -> "Mic stopped (error $code). Tap to try again."
                     }
                 }
@@ -162,7 +187,9 @@ class SpeechController internal constructor(private val context: Context) {
             if (listening) level = ((rmsdB + 2f) / 12f).coerceIn(0f, 1f)
         }
 
-        override fun onReadyForSpeech(params: Bundle?) {}
+        override fun onReadyForSpeech(params: Bundle?) {
+            retries = 0
+        }
         override fun onBeginningOfSpeech() {}
         override fun onBufferReceived(buffer: ByteArray?) {}
         override fun onEndOfSpeech() {}
