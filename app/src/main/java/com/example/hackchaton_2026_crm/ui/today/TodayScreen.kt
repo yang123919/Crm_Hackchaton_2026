@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -65,6 +66,7 @@ fun TodayScreen(
     onOpenLead: (Long) -> Unit,
     onWhatsApp: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenDataHealth: () -> Unit,
     onOpenLeads: (() -> Unit)?,
     onOpenGroup: (LeadGroup) -> Unit,
     viewModel: TodayViewModel = viewModel(factory = TodayViewModel.Factory),
@@ -90,6 +92,7 @@ fun TodayScreen(
                     if (onOpenLeads != null) {
                         IconButton(onClick = onOpenLeads) { Icon(Icons.Filled.Search, "Customers") }
                     }
+                    IconButton(onClick = onOpenDataHealth) { Icon(Icons.Filled.HealthAndSafety, "Data health") }
                     IconButton(onClick = onOpenSettings) { Icon(Icons.Filled.Settings, "Settings") }
                 },
             )

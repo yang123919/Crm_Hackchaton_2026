@@ -1,9 +1,11 @@
 package com.example.hackchaton_2026_crm.ai
 
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
+import com.example.hackchaton_2026_crm.data.HealthIssue
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
 import com.example.hackchaton_2026_crm.data.SeedData
+import com.example.hackchaton_2026_crm.data.Severity
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -160,6 +162,18 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
     }
 
     private var draftCount = 0
+
+    /** Offline stand-in: the scan's own recommended action per problem, plus a canned verdict. */
+    override suspend fun explainDataHealth(issues: List<HealthIssue>): HealthAdvice {
+        delay(delayMs)
+        val worst = issues.minOfOrNull { it.severity }
+        val summary = when (worst) {
+            null -> "Your customer data looks clean."
+            Severity.HIGH -> "Some records are likely wrong and will cause missed calls or double work. Fix those first."
+            else -> "No serious errors, but a few records need tidying so reports stay accurate."
+        }
+        return HealthAdvice(summary, issues.map { it.todo })
+    }
 
     // ---- Rules ------------------------------------------------------------------------
 

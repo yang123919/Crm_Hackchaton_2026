@@ -1,6 +1,7 @@
 package com.example.hackchaton_2026_crm.ai
 
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
+import com.example.hackchaton_2026_crm.data.HealthIssue
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
 import com.example.hackchaton_2026_crm.data.SeedData
@@ -53,6 +54,9 @@ class GeminiAiService(
         // Creative text: higher than extraction so "Regenerate" gives a fresh wording.
         temperature = 0.9,
     ).trim()
+
+    override suspend fun explainDataHealth(issues: List<HealthIssue>): HealthAdvice =
+        decode(generate(AiPrompts.healthSystem, AiPrompts.healthUser(issues), AiPrompts.healthSchema))
 
     private inline fun <reified T> decode(text: String): T = try {
         AiJson.decodeFromString<T>(stripFences(text))

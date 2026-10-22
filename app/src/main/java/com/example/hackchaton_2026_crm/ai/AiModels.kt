@@ -57,4 +57,11 @@ data class FollowUpExtraction(
     @SerialName("suggested_sales_stage") val suggestedSalesStage: String? = null,
 )
 
+/** AI answer for the Data Health screen: one explanation per problem, in the order they were sent. */
+@Serializable
+data class HealthAdvice(
+    val summary: String = "",
+    val explanations: List<String> = emptyList(),
+)
+
 class AiException(message: String, cause: Throwable? = null) : Exception(message, cause)

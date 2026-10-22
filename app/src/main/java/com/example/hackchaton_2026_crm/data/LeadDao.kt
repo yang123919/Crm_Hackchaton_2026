@@ -71,6 +71,49 @@ interface LeadDao {
         insertEntry(entry)
     }
 
+    @Update
+    suspend fun updateEntry(entry: FollowUpEntry)
+
+    @Query("DELETE FROM follow_up_entries WHERE id IN (:ids)")
+    suspend fun deleteEntries(ids: List<Long>)
+
+    @Query("UPDATE follow_up_entries SET leadId = :to WHERE leadId = :from")
+    suspend fun moveEntries(from: Long, to: Long)
+
+    @Query("SELECT * FROM follow_up_entries WHERE leadId = :leadId AND date = :date ORDER BY createdAt DESC, id DESC")
+    suspend fun entriesOn(leadId: Long, date: LocalDate): List<FollowUpEntry>
+
+    /**
+     * Logs "WhatsApp sent" once per customer per day: opening WhatsApp again (another language,
+     * another try) replaces today's entry instead of stacking a second one. Also tidies old duplicates.
+     */
+    @Transaction
+    suspend fun logWhatsApp(entry: FollowUpEntry) {
+        val today = entriesOn(entry.leadId, entry.date).filter { it.summary.startsWith(FollowUpEntry.WHATSAPP_PREFIX) }
+        if (today.isEmpty()) {
+            insertEntry(entry)
+            return
+        }
+        updateEntry(entry.copy(id = today.first().id))
+        deleteEntries(today.drop(1).map { it.id })
+    }
+
+    @Query("SELECT * FROM leads")
+    suspend fun allLeads(): List<Lead>
+
+    @Query("SELECT * FROM follow_up_entries")
+    suspend fun allEntries(): List<FollowUpEntry>
+
+    /** Saves the merged customer, moves the others' history onto it, then deletes the others. */
+    @Transaction
+    suspend fun mergeLeads(merged: Lead, dropIds: List<Long>) {
+        update(merged)
+        dropIds.forEach {
+            moveEntries(it, merged.id)
+            delete(it)
+        }
+    }
+
     @Insert
     suspend fun insertMetric(metric: CaptureMetric)
 

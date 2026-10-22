@@ -29,6 +29,7 @@ import com.example.hackchaton_2026_crm.data.LeadGroup
 import com.example.hackchaton_2026_crm.ui.auth.LoginScreen
 import com.example.hackchaton_2026_crm.ui.auth.RegisterScreen
 import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
+import com.example.hackchaton_2026_crm.ui.health.DataHealthScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
 import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
 import com.example.hackchaton_2026_crm.ui.settings.SettingsScreen
@@ -59,6 +60,7 @@ data class ReviewRoute(
 @Serializable data class FollowUpRoute(val leadId: Long)
 @Serializable object SettingsRoute
 @Serializable data class LeadListRoute(val group: LeadGroup)
+@Serializable object DataHealthRoute
 
 @Composable
 fun QuickLeadNavHost() {
@@ -126,6 +128,7 @@ private fun AppNav(authState: AuthState) {
                 onOpenLead = { go(LeadDetailRoute(it)) },
                 onWhatsApp = openWhatsApp,
                 onOpenSettings = { go(SettingsRoute) },
+                onOpenDataHealth = { go(DataHealthRoute) },
                 onOpenLeads = null,
                 onOpenGroup = { go(LeadListRoute(it)) },
             )
@@ -172,6 +175,9 @@ private fun AppNav(authState: AuthState) {
                 onWhatsApp = openWhatsApp,
                 onVoiceUpdate = { go(FollowUpRoute(it)) },
             )
+        }
+        composable<DataHealthRoute> {
+            DataHealthScreen(onBack = { back() }, onOpenLead = { go(LeadDetailRoute(it)) })
         }
         composable<SettingsRoute> {
             SettingsScreen(onBack = { back() })

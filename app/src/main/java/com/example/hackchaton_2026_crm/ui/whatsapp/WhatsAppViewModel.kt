@@ -81,11 +81,11 @@ class WhatsAppViewModel(
         val lead = s.lead ?: return
         viewModelScope.launch {
             val preview = s.text.trim().let { if (it.length > 80) it.take(80).trimEnd() + "…" else it }
-            repository.addEntry(
+            repository.logWhatsApp(
                 FollowUpEntry(
                     leadId = lead.id,
                     date = Format.today(),
-                    summary = "WhatsApp sent: \"$preview\"",
+                    summary = "${FollowUpEntry.WHATSAPP_PREFIX} \"$preview\"",
                     nextAction = lead.nextAction.orEmpty(),
                     nextDate = lead.nextFollowUpAt,
                     rawTranscript = s.text,

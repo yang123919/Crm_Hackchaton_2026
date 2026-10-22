@@ -65,7 +65,12 @@ data class FollowUpEntry(
     val nextDate: LocalDate? = null,
     val rawTranscript: String = "",
     val createdAt: Instant = Instant.now(),
-)
+) {
+    companion object {
+        /** Summaries logged by the WhatsApp sheet start with this; used to keep one such entry per day. */
+        const val WHATSAPP_PREFIX = "WhatsApp sent:"
+    }
+}
 
 @Entity(tableName = "capture_metrics")
 data class CaptureMetric(

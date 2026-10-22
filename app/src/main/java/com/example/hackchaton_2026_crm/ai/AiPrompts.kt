@@ -1,6 +1,7 @@
 package com.example.hackchaton_2026_crm.ai
 
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
+import com.example.hackchaton_2026_crm.data.HealthIssue
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
 import com.example.hackchaton_2026_crm.data.ReferenceLists
@@ -75,6 +76,35 @@ object AiPrompts {
         lead.nextAction?.let { appendLine("Next action: $it") }
         lead.nextFollowUpAt?.let { appendLine("Next date: $it") }
         lastEntry?.let { appendLine("Last note (${it.date}): ${it.summary}") }
+    }
+
+    val healthSystem = """
+        You are a data-quality assistant inside a car dealership CRM (CS Group, Malaysia).
+        You receive a numbered list of data problems that a rule-based scan already found. Do not look for new ones.
+        For each problem write ONE short, plain-English sentence for a busy salesperson: why it matters and what to do.
+        At most 25 words each. Use only the facts given; never invent names, numbers or dates.
+        Also write a "summary" of at most 30 words about the overall state of the data.
+        Do not state counts in the summary; the screen already shows them.
+        "explanations" must hold exactly one string per problem, in the same order as the list.
+    """.trimIndent()
+
+    fun healthUser(issues: List<HealthIssue>) = buildString {
+        issues.forEachIndexed { i, issue ->
+            appendLine("${i + 1}. [${issue.kind.label}, ${issue.severity.name.lowercase()}] ${issue.title}")
+            appendLine("   Found: ${issue.detail}")
+            appendLine("   Suggested: ${issue.fix?.label ?: "salesperson corrects it by hand"}")
+        }
+    }
+
+    val healthSchema: JsonObject = obj {
+        props {
+            putJsonObject("summary") { put("type", "STRING") }
+            putJsonObject("explanations") {
+                put("type", "ARRAY")
+                putJsonObject("items") { put("type", "STRING") }
+            }
+        }
+        required("summary", "explanations")
     }
 
     val leadSchema: JsonObject = obj {

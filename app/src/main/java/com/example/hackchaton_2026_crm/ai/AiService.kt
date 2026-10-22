@@ -1,6 +1,7 @@
 package com.example.hackchaton_2026_crm.ai
 
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
+import com.example.hackchaton_2026_crm.data.HealthIssue
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
 import com.example.hackchaton_2026_crm.data.SettingsRepository
@@ -20,6 +21,9 @@ interface AiService {
         language: MessageLanguage,
         salesperson: String,
     ): String
+
+    /** Plain-language explanation and advice for each data problem the rule-based scan found. */
+    suspend fun explainDataHealth(issues: List<HealthIssue>): HealthAdvice
 }
 
 /**
@@ -49,4 +53,6 @@ class AiRouter(
         language: MessageLanguage,
         salesperson: String,
     ) = pick().draftWhatsApp(lead, lastEntry, language, salesperson)
+
+    override suspend fun explainDataHealth(issues: List<HealthIssue>) = pick().explainDataHealth(issues)
 }

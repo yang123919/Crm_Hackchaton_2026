@@ -37,6 +37,23 @@ class LeadRepository(private val dao: LeadDao) {
 
     suspend fun deleteLead(id: Long) = dao.delete(id)
 
+    suspend fun logWhatsApp(entry: FollowUpEntry) = dao.logWhatsApp(entry)
+
+    suspend fun scanHealth(today: LocalDate): List<HealthIssue> =
+        DataHealth.scan(dao.allLeads(), dao.allEntries(), today)
+
+    suspend fun applyFix(fix: HealthFix) {
+        when (fix) {
+            is HealthFix.MergeCustomers -> {
+                val keeper = dao.get(fix.keeperId) ?: return
+                val others = fix.dropIds.mapNotNull { dao.get(it) }
+                if (others.isEmpty()) return
+                dao.mergeLeads(DataHealth.merge(keeper, others).copy(updatedAt = Instant.now()), others.map { it.id })
+            }
+            is HealthFix.RemoveEntries -> dao.deleteEntries(fix.entryIds)
+        }
+    }
+
     suspend fun addEntry(entry: FollowUpEntry) = dao.insertEntry(entry)
 
     /** Saves a follow-up log entry and the lead's new stage / next step together. */
