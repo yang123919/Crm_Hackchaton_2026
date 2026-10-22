@@ -42,6 +42,10 @@ interface LeadDao {
     @Update
     suspend fun update(lead: Lead)
 
+    /** Follow-up entries go with it (ForeignKey.CASCADE). */
+    @Query("DELETE FROM leads WHERE id = :id")
+    suspend fun delete(id: Long)
+
     @Query("SELECT * FROM follow_up_entries WHERE leadId = :leadId ORDER BY date DESC, createdAt DESC")
     fun observeEntries(leadId: Long): Flow<List<FollowUpEntry>>
 

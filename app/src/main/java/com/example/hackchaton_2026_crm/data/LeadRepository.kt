@@ -35,6 +35,8 @@ class LeadRepository(private val dao: LeadDao) {
 
     suspend fun updateLead(lead: Lead) = dao.update(lead.copy(updatedAt = Instant.now()))
 
+    suspend fun deleteLead(id: Long) = dao.delete(id)
+
     suspend fun addEntry(entry: FollowUpEntry) = dao.insertEntry(entry)
 
     /** Saves a follow-up log entry and the lead's new stage / next step together. */
