@@ -26,6 +26,8 @@ class LeadRepository(private val dao: LeadDao) {
 
     suspend fun findByMobile(mobile: String): Lead? = dao.findByMobile(mobile)
 
+    suspend fun findByIc(icNumber: String): Lead? = dao.findByIc(icNumber)
+
     suspend fun latestEntry(leadId: Long): FollowUpEntry? = dao.latestEntry(leadId)
 
     suspend fun createLead(lead: Lead, firstEntry: FollowUpEntry?): Long =

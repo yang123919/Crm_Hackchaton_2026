@@ -21,7 +21,7 @@ class Converters {
 
 @Database(
     entities = [Lead::class, FollowUpEntry::class, CaptureMetric::class, User::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -42,9 +42,19 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Customers can now carry the IC number, address and gender read from a scanned MyKad. */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `icNumber` TEXT")
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `address` TEXT")
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `gender` TEXT")
+                connection.execSQL("CREATE INDEX IF NOT EXISTS `index_leads_icNumber` ON `leads` (`icNumber`)")
+            }
+        }
+
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "quicklead.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
     }

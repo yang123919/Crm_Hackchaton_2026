@@ -41,6 +41,7 @@ import com.example.hackchaton_2026_crm.ui.components.MicButton
 import com.example.hackchaton_2026_crm.ui.components.rememberSpeechController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.hackchaton_2026_crm.ocr.IcInfo
 
 /** Sample voice lines from docs/PLAN.md, one tap to fill for the demo. */
 private val samples = listOf(
@@ -54,12 +55,14 @@ private val samples = listOf(
 @Composable
 fun CaptureScreen(
     onBack: () -> Unit,
-    onProcess: (transcript: String, startedAtMillis: Long) -> Unit,
+    onProcess: (transcript: String, startedAtMillis: Long, ic: IcInfo?) -> Unit,
 ) {
     val startedAt by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
     var text by rememberSaveable { mutableStateOf("") }
     val speech = rememberSpeechController()
     val focus = remember { FocusRequester() }
+    val icScan = rememberIcScan()
+    val canProcess = (text.isNotBlank() || icScan.info != null) && !icScan.scanning
 
     Scaffold(
         topBar = {
@@ -72,12 +75,15 @@ fun CaptureScreen(
         },
         bottomBar = {
             Button(
-                onClick = { speech.stop(); onProcess(text.trim(), startedAt) },
-                enabled = text.isNotBlank(),
+                onClick = { speech.stop(); onProcess(text.trim(), startedAt, icScan.info) },
+                enabled = canProcess,
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
                     .padding(16.dp).height(56.dp),
             ) {
-                Text("Process with AI", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (text.isBlank() && icScan.info != null) "Review details" else "Process with AI",
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Spacer(Modifier.width(8.dp))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
             }
@@ -91,6 +97,7 @@ fun CaptureScreen(
                 "Tell me about the customer: name, phone, car, budget, next step.",
                 style = MaterialTheme.typography.titleMedium,
             )
+            IcScanSection(icScan)
             MicButton(speech, text, onTextChange = { text = it }, modifier = Modifier.align(Alignment.CenterHorizontally))
             OutlinedTextField(
                 value = text,

@@ -27,6 +27,9 @@ interface LeadDao {
     @Query("SELECT * FROM leads WHERE nextFollowUpAt IS NOT NULL AND nextFollowUpAt <= :today")
     suspend fun dueOnOrBefore(today: LocalDate): List<Lead>
 
+    @Query("SELECT * FROM leads WHERE icNumber = :icNumber LIMIT 1")
+    suspend fun findByIc(icNumber: String): Lead?
+
     @Query("SELECT COUNT(*) FROM leads")
     suspend fun count(): Int
 

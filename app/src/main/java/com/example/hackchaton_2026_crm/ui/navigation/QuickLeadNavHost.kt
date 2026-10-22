@@ -38,7 +38,16 @@ import kotlinx.serialization.Serializable
 @Serializable object TodayRoute
 @Serializable data class LeadDetailRoute(val leadId: Long)
 @Serializable object CaptureRoute
-@Serializable data class ReviewRoute(val transcript: String, val startedAtMillis: Long)
+@Serializable
+data class ReviewRoute(
+    val transcript: String,
+    val startedAtMillis: Long,
+    /** Read from a scanned IC, if any. Empty strings mean "not scanned". */
+    val icName: String = "",
+    val icNumber: String = "",
+    val icAddress: String = "",
+    val icGender: String = "",
+)
 @Serializable data class FollowUpRoute(val leadId: Long)
 @Serializable object SettingsRoute
 
@@ -99,7 +108,15 @@ private fun AppNav(authState: AuthState) {
         composable<CaptureRoute> {
             CaptureScreen(
                 onBack = { navController.popBackStack() },
-                onProcess = { transcript, startedAt -> navController.navigate(ReviewRoute(transcript, startedAt)) },
+                onProcess = { transcript, startedAt, ic ->
+                    navController.navigate(
+                        ReviewRoute(
+                            transcript, startedAt,
+                            icName = ic?.fullName.orEmpty(), icNumber = ic?.icNumber.orEmpty(),
+                            icAddress = ic?.address.orEmpty(), icGender = ic?.gender.orEmpty(),
+                        ),
+                    )
+                },
             )
         }
         composable<ReviewRoute> {

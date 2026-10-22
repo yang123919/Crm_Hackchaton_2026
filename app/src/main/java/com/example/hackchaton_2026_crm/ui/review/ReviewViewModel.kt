@@ -11,6 +11,8 @@ import com.example.hackchaton_2026_crm.ai.Normalizer
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadRepository
 import com.example.hackchaton_2026_crm.data.SettingsRepository
+import com.example.hackchaton_2026_crm.ocr.IcInfo
+import com.example.hackchaton_2026_crm.ocr.IcNumbers
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.containerFactory
 import com.example.hackchaton_2026_crm.ui.navigation.ReviewRoute
@@ -54,6 +56,9 @@ class ReviewViewModel(
     private val route = savedStateHandle.toRoute<ReviewRoute>()
     val transcript: String = route.transcript
     private val startedAt = Instant.ofEpochMilli(route.startedAtMillis)
+    private val ic = IcInfo(
+        fullName = route.icName, icNumber = route.icNumber, address = route.icAddress, gender = route.icGender,
+    )
 
     private val _state = MutableStateFlow(ReviewUiState())
     val state: StateFlow<ReviewUiState> = _state.asStateFlow()
@@ -64,10 +69,19 @@ class ReviewViewModel(
 
     private var aiJob: Job? = null
     private var duplicateJob: Job? = null
-    private var dismissedDuplicateMobile: String? = null
+    private var dismissedDuplicateId: Long? = null
 
     init {
-        process(forceDemo = false)
+        // An IC scan alone is enough to start; there is nothing for the AI to read then.
+        if (transcript.isBlank()) startFromIcOnly() else process(forceDemo = false)
+    }
+
+    private fun startFromIcOnly() {
+        viewModelScope.launch {
+            val form = LeadForm(outlet = settings.current().defaultOutlet).withIc(ic)
+            _state.update { it.copy(phase = ReviewPhase.Editing, form = form) }
+            checkDuplicate(form)
+        }
     }
 
     fun process(forceDemo: Boolean) {
@@ -87,8 +101,9 @@ class ReviewViewModel(
                 val today = Format.today()
                 val extraction = (if (demo) ai.demo else ai).extractLead(transcript, today)
                 val form = LeadForm.from(Normalizer.normalizeLead(extraction, today), settings.current().defaultOutlet)
+                    .withIc(ic)
                 _state.update { it.copy(phase = ReviewPhase.Editing, form = form, usedDemo = demo) }
-                checkDuplicate(form.normalizedMobile)
+                checkDuplicate(form)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -106,7 +121,7 @@ class ReviewViewModel(
             _state.update {
                 it.copy(
                     phase = ReviewPhase.Editing,
-                    form = LeadForm(outlet = settings.current().defaultOutlet, summary = transcript),
+                    form = LeadForm(outlet = settings.current().defaultOutlet, summary = transcript).withIc(ic),
                     usedDemo = false,
                 )
             }
@@ -114,25 +129,23 @@ class ReviewViewModel(
     }
 
     fun edit(field: LeadField, change: LeadForm.() -> LeadForm) {
-        val before = _state.value.form.normalizedMobile
         _state.update { it.copy(form = it.form.change().let { f -> f.copy(lowConfidence = f.lowConfidence - field) }) }
-        val after = _state.value.form.normalizedMobile
-        if (field == LeadField.MOBILE && after != before) checkDuplicate(after)
+        // Same phone or same IC as an existing customer: warn as soon as either is typed.
+        if (field == LeadField.MOBILE || field == LeadField.IC_NUMBER) checkDuplicate(_state.value.form)
     }
 
     fun saveAsNew() {
-        dismissedDuplicateMobile = _state.value.duplicate?.mobile
+        dismissedDuplicateId = _state.value.duplicate?.id
         _state.update { it.copy(duplicate = null) }
     }
 
-    private fun checkDuplicate(mobile: String?) {
+    private fun checkDuplicate(form: LeadForm) {
         duplicateJob?.cancel()
-        if (mobile == null || mobile == dismissedDuplicateMobile) {
-            _state.update { it.copy(duplicate = null) }
-            return
-        }
+        val mobile = form.normalizedMobile
+        val ic = IcNumbers.normalize(form.icNumber)
         duplicateJob = viewModelScope.launch {
-            val existing = repository.findByMobile(mobile)
+            val existing = (mobile?.let { repository.findByMobile(it) } ?: ic?.let { repository.findByIc(it) })
+                ?.takeIf { it.id != dismissedDuplicateId }
             _state.update { it.copy(duplicate = existing) }
         }
     }

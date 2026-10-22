@@ -19,7 +19,10 @@ enum class LeadField(val key: String) {
     NEXT_ACTION("next_action"),
     NEXT_DATE("next_date"),
     STAGE("suggested_sales_stage"),
-    SUMMARY("summary");
+    SUMMARY("summary"),
+    IC_NUMBER("ic_number"),
+    ADDRESS("address"),
+    GENDER("gender");
 
     companion object {
         private val tradeInKeys = setOf("used_car", "brand", "model", "year")

@@ -191,7 +191,7 @@ private fun ReviewForm(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             AiMark()
-            Text(" = filled by AI    ", style = MaterialTheme.typography.bodySmall)
+            Text(" = filled automatically    ", style = MaterialTheme.typography.bodySmall)
             Text("!", fontWeight = FontWeight.Bold, color = LocalStatusColors.current.dueToday)
             Text(" = please check", style = MaterialTheme.typography.bodySmall)
             if (state.usedDemo) {
@@ -205,8 +205,15 @@ private fun ReviewForm(
         }
         field(LeadField.FIRST_NAME, "First name *", form.firstName, KeyboardType.Text) { copy(firstName = it) }
         field(LeadField.LAST_NAME, "Last name", form.lastName, KeyboardType.Text) { copy(lastName = it) }
+        field(LeadField.IC_NUMBER, "IC number", form.icNumber, KeyboardType.Number) { copy(icNumber = it) }
+        Dropdown("Gender", form.gender.ifEmpty { null }, listOf("Male", "Female"), form, LeadField.GENDER, null) {
+            onEdit(LeadField.GENDER) { copy(gender = it) }
+        }
         field(LeadField.MOBILE, "Mobile *", form.mobile, KeyboardType.Phone) { copy(mobile = it) }
         field(LeadField.EMAIL, "Email", form.email, KeyboardType.Email) { copy(email = it) }
+        FormTextField("Address", form.address, form, LeadField.ADDRESS, null, KeyboardType.Text, singleLine = false) {
+            onEdit(LeadField.ADDRESS) { copy(address = it) }
+        }
         Dropdown("Product *", form.product, ReferenceLists.products, form, LeadField.PRODUCT, errors[LeadField.PRODUCT]) {
             onEdit(LeadField.PRODUCT) { copy(product = it) }
         }

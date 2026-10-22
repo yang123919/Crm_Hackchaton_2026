@@ -8,7 +8,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /** Mirrors the SuiteCRM Lead/Opportunity fields used by CS Group. */
-@Entity(tableName = "leads", indices = [Index("mobile")])
+@Entity(tableName = "leads", indices = [Index("mobile"), Index("icNumber")])
 data class Lead(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val firstName: String,
@@ -16,6 +16,11 @@ data class Lead(
     /** Normalised as 60XXXXXXXXX. */
     val mobile: String,
     val email: String? = null,
+    /** Malaysian IC, formatted YYMMDD-PB-####. Shown masked; the scan photo is never kept. */
+    val icNumber: String? = null,
+    val address: String? = null,
+    /** "Male" or "Female". */
+    val gender: String? = null,
     val product: String,
     val outlet: String,
     val status: String = LeadStatus.NEW,
@@ -32,6 +37,8 @@ data class Lead(
     val updatedAt: Instant = Instant.now(),
 ) {
     val fullName: String get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ")
+
+    val maskedIc: String? get() = icNumber?.let(com.example.hackchaton_2026_crm.ocr.IcInfo::maskIc)
 }
 
 object LeadStatus {

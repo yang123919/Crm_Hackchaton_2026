@@ -128,6 +128,9 @@ private fun LeadDetailContent(
         )
         DetailRow("Close date", lead.expectedCloseDate?.let(Format::longDate))
         DetailRow("Email", lead.email)
+        DetailRow("IC", lead.maskedIc)
+        DetailRow("Gender", lead.gender)
+        DetailRow("Address", lead.address)
         DetailRow("Status", lead.status)
         Spacer(Modifier.height(24.dp))
     }

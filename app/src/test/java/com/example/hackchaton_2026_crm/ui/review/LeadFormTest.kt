@@ -4,6 +4,7 @@ import com.example.hackchaton_2026_crm.ai.LeadExtraction
 import com.example.hackchaton_2026_crm.ai.LeadField
 import com.example.hackchaton_2026_crm.ai.Normalizer
 import com.example.hackchaton_2026_crm.ai.TradeIn
+import com.example.hackchaton_2026_crm.ocr.IcInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -50,5 +51,34 @@ class LeadFormTest {
         assertTrue(LeadField.MOBILE in form.lowConfidence)
         assertTrue(LeadField.MOBILE in form.errors(today))
         assertEquals("2018", form.tradeInYear)
+    }
+
+    @Test fun scannedIc_overridesNameAndFillsIcAddressGender() {
+        val n = Normalizer.normalizeLead(LeadExtraction(firstName = "Aisha", mobile = "0123456789"), today)
+        val ic = IcInfo(
+            fullName = "Nur Aisyah binti Abdul Rahman", icNumber = "900101-14-1234",
+            address = "No 12, Jalan Contoh 3, 50450 Kuala Lumpur", gender = "Female",
+        )
+        val form = LeadForm.from(n, null).withIc(ic)
+        assertEquals("Nur Aisyah", form.firstName)
+        assertEquals("binti Abdul Rahman", form.lastName)
+        assertEquals("900101-14-1234", form.icNumber)
+        assertEquals("Female", form.gender)
+        assertEquals("60123456789", form.normalizedMobile) // phone still comes from speech
+        assertTrue(LeadField.IC_NUMBER in form.aiFilled)
+    }
+
+    @Test fun icNumber_isValidatedAndNormalisedOnSave() {
+        val base = LeadForm(firstName = "A", mobile = "0123456789", product = "Proton X50", outlet = "CS Insta")
+        assertTrue(LeadField.IC_NUMBER in base.copy(icNumber = "901301-14-1234").errors(today))
+        assertTrue(LeadField.IC_NUMBER !in base.copy(icNumber = "").errors(today))
+        assertEquals("900101-14-1234", base.copy(icNumber = "900101141234").toLead(today).icNumber)
+        assertNull(base.copy(icNumber = "").toLead(today).icNumber)
+        assertEquals("******-**-1234", base.copy(icNumber = "900101-14-1234").toLead(today).maskedIc)
+    }
+
+    @Test fun emptyIcScan_changesNothing() {
+        val form = LeadForm(firstName = "Lim")
+        assertEquals(form, form.withIc(IcInfo()))
     }
 }

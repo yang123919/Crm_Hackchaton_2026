@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Camera photos of an IC are written here, read once for OCR and deleted straight away. -->
+<paths>
+    <cache-path name="ic_scan" path="ic_scan/" />
+</paths>
