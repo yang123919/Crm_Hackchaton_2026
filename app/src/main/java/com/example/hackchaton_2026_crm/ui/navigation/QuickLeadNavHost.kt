@@ -2,19 +2,21 @@ package com.example.hackchaton_2026_crm.ui.navigation
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.hackchaton_2026_crm.QuickLeadApp
-import com.example.hackchaton_2026_crm.ui.Intents
 import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
 import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
 import com.example.hackchaton_2026_crm.ui.today.TodayScreen
 import com.example.hackchaton_2026_crm.ui.update.FollowUpScreen
-import kotlinx.coroutines.launch
+import com.example.hackchaton_2026_crm.ui.whatsapp.WhatsAppSheet
 import kotlinx.serialization.Serializable
 
 @Serializable object TodayRoute
@@ -27,13 +29,11 @@ import kotlinx.serialization.Serializable
 fun QuickLeadNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val repository = (context.applicationContext as QuickLeadApp).container.leadRepository
 
-    // Until the AI WhatsApp draft exists, open a blank chat with the customer.
-    val openWhatsApp: (Long) -> Unit = { leadId ->
-        scope.launch { repository.getLead(leadId)?.let { Intents.whatsapp(context, it.mobile) } }
-    }
+    // WhatsApp draft sheet shown over any screen: (leadId, openId) so each opening drafts afresh.
+    var whatsApp by rememberSaveable { mutableStateOf<Pair<Long, Int>?>(null) }
+    var whatsAppOpens by rememberSaveable { mutableIntStateOf(0) }
+    val openWhatsApp: (Long) -> Unit = { leadId -> whatsApp = leadId to ++whatsAppOpens }
 
     NavHost(navController = navController, startDestination = TodayRoute) {
         composable<TodayRoute> {
@@ -81,5 +81,9 @@ fun QuickLeadNavHost() {
                 },
             )
         }
+    }
+
+    whatsApp?.let { (leadId, openId) ->
+        WhatsAppSheet(leadId = leadId, openId = openId, onDismiss = { whatsApp = null })
     }
 }

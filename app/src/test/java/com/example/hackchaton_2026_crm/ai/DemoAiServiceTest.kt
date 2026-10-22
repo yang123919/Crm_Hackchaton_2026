@@ -85,4 +85,12 @@ class DemoAiServiceTest {
         assertTrue(ai.draftWhatsApp(lead, null, MessageLanguage.EN, "Kelvin").contains("quotation"))
         assertTrue(ai.draftWhatsApp(lead, null, MessageLanguage.BM, "Kelvin").contains("sebut harga"))
     }
+
+    @Test fun whatsApp_neverMentionsOverdueDate() = runTest {
+        val lead = Lead(firstName = "Ahmad", mobile = "60139876543", product = "Omoda 5 Comfort",
+            outlet = "CS Insta", salesStage = "Test Drive", nextFollowUpAt = LocalDate.of(2020, 1, 5))
+        val text = ai.draftWhatsApp(lead, null, MessageLanguage.EN, "Kelvin")
+        assertFalse(text.contains("5 Jan"))
+        assertTrue(text.contains("test drive?"))
+    }
 }

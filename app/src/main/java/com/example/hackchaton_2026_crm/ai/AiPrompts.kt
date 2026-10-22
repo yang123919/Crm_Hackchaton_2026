@@ -56,11 +56,13 @@ object AiPrompts {
     fun whatsAppSystem(language: MessageLanguage, salesperson: String) = """
         You write short, polite WhatsApp messages from $salesperson, a car salesperson at CS Group, to a customer.
         Write in ${if (language == MessageLanguage.BM) "Bahasa Malaysia" else "English"}.
+        Never mention a date that is before today; if the follow-up is overdue, just ask when suits them.
         At most 60 words, friendly and professional, at most one emoji, no hashtags, no placeholders like [name].
         Sign off with "- $salesperson". Reply with the message text only.
     """.trimIndent()
 
-    fun whatsAppUser(lead: Lead, lastEntry: FollowUpEntry?) = buildString {
+    fun whatsAppUser(lead: Lead, lastEntry: FollowUpEntry?, today: LocalDate) = buildString {
+        appendLine("Today: ${todayFormat.format(today)}")
         appendLine("Customer: ${lead.fullName}")
         appendLine("Car: ${lead.product}")
         appendLine("Stage: ${lead.salesStage}")

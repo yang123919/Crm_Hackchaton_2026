@@ -3,6 +3,7 @@ package com.example.hackchaton_2026_crm.ai
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
+import com.example.hackchaton_2026_crm.data.SeedData
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -109,7 +110,8 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
         salesperson: String,
     ): String {
         delay(delayMs / 2)
-        val date = lead.nextFollowUpAt?.let(shortDate::format)
+        // An overdue date would read oddly in a message ("test drive on Sun 18 Oct?"), so skip it.
+        val date = lead.nextFollowUpAt?.takeIf { !it.isBefore(LocalDate.now(SeedData.ZONE)) }?.let(shortDate::format)
         return if (language == MessageLanguage.BM) {
             val line = when (lead.salesStage) {
                 "Test Drive" -> "Bila masa yang sesuai untuk pandu uji${date?.let { ", mungkin $it" } ?: ""}?"

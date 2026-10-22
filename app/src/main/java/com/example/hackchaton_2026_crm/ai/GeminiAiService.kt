@@ -3,6 +3,7 @@ package com.example.hackchaton_2026_crm.ai
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.MessageLanguage
+import com.example.hackchaton_2026_crm.data.SeedData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.SerializationException
@@ -47,7 +48,7 @@ class GeminiAiService(
         salesperson: String,
     ): String = generate(
         AiPrompts.whatsAppSystem(language, salesperson),
-        AiPrompts.whatsAppUser(lead, lastEntry),
+        AiPrompts.whatsAppUser(lead, lastEntry, LocalDate.now(SeedData.ZONE)),
         schema = null,
     ).trim()
 
