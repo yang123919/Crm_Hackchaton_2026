@@ -44,24 +44,36 @@ import com.example.hackchaton_2026_crm.ui.components.Dropdown
 import com.example.hackchaton_2026_crm.ui.containerFactory
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import com.example.hackchaton_2026_crm.auth.AuthRepository
+import com.example.hackchaton_2026_crm.auth.AuthState
+import com.example.hackchaton_2026_crm.data.User
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val repository: SettingsRepository,
+    private val auth: AuthRepository,
     /** False when no GEMINI_API_KEY was built in: Demo mode is then forced on. */
     val hasRealAi: Boolean,
 ) : ViewModel() {
     val settings: StateFlow<Settings?> =
         repository.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun setName(name: String) = viewModelScope.launch { repository.setSalespersonName(name) }
+    val user: StateFlow<User?> = auth.state
+        .map { (it as? AuthState.LoggedIn)?.user }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The nav host sees the session end and returns to the sign-in screen. */
+    fun logout() = viewModelScope.launch { auth.logout() }
     fun setOutlet(outlet: String?) = viewModelScope.launch { repository.setDefaultOutlet(outlet) }
     fun setDemo(on: Boolean) = viewModelScope.launch { repository.setDemoMode(on) }
     fun setLanguage(language: MessageLanguage) = viewModelScope.launch { repository.setWhatsappLanguage(language) }
 
     companion object {
-        val Factory = containerFactory { SettingsViewModel(it.settingsRepository, it.aiService.hasRealAi) }
+        val Factory = containerFactory {
+            SettingsViewModel(it.settingsRepository, it.authRepository, it.aiService.hasRealAi)
+        }
     }
 }
 
@@ -90,14 +102,21 @@ fun SettingsScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OutlinedTextField(
-                value = s.salespersonName,
-                onValueChange = viewModel::setName,
-                label = { Text("Salesperson name") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            val user by viewModel.user.collectAsStateWithLifecycle()
+            user?.let { u ->
+                Column {
+                    Text("Account", style = MaterialTheme.typography.titleMedium)
+                    Text(u.displayName, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        u.email,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(onClick = viewModel::logout, modifier = Modifier.padding(top = 8.dp)) {
+                        Text("Log out")
+                    }
+                }
+            }
             Dropdown(
                 label = "Default outlet",
                 value = s.defaultOutlet ?: NO_OUTLET,

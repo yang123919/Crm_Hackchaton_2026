@@ -4,6 +4,8 @@ import android.app.Application
 import com.example.hackchaton_2026_crm.ai.AiRouter
 import com.example.hackchaton_2026_crm.ai.DemoAiService
 import com.example.hackchaton_2026_crm.ai.GeminiAiService
+import com.example.hackchaton_2026_crm.auth.AuthRepository
+import com.example.hackchaton_2026_crm.auth.DataStoreSessionStore
 import com.example.hackchaton_2026_crm.data.AppDatabase
 import com.example.hackchaton_2026_crm.data.LeadRepository
 import com.example.hackchaton_2026_crm.data.SeedData
@@ -19,6 +21,14 @@ class AppContainer(app: Application) {
     val database = AppDatabase.build(app)
     val leadRepository = LeadRepository(database.leadDao())
     val settingsRepository = SettingsRepository(app)
+
+    val authRepository = AuthRepository(
+        dao = database.userDao(),
+        session = DataStoreSessionStore(app),
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        // The salesperson's name signs WhatsApp messages and greets them on Today.
+        onSignedIn = { settingsRepository.setSalespersonName(it.displayName) },
+    )
 
     /** Real Gemini when GEMINI_API_KEY is set in local.properties; otherwise always Demo mode. */
     val aiService = AiRouter(
