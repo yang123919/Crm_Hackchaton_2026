@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hackchaton_2026_crm.ocr.IcInfo
+import com.example.hackchaton_2026_crm.ocr.LicenceInfo
 
 /** Example notes, one tap to fill for a quick try. */
 private val samples = listOf(
@@ -50,14 +51,15 @@ private val samples = listOf(
 @Composable
 fun CaptureScreen(
     onBack: () -> Unit,
-    onProcess: (transcript: String, startedAtMillis: Long, ic: IcInfo?) -> Unit,
+    onProcess: (transcript: String, startedAtMillis: Long, ic: IcInfo?, licence: LicenceInfo?) -> Unit,
 ) {
     val startedAt by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
     var text by rememberSaveable { mutableStateOf("") }
     val scan = rememberScan(onFormText = { scanned ->
         text = listOf(text.trim(), scanned).filter { it.isNotEmpty() }.joinToString("\n")
     })
-    val canProcess = (text.isNotBlank() || scan.ic != null) && !scan.busy
+    val scannedId = scan.ic != null || scan.licence != null
+    val canProcess = (text.isNotBlank() || scannedId) && !scan.busy
 
     Scaffold(
         topBar = {
@@ -70,13 +72,13 @@ fun CaptureScreen(
         },
         bottomBar = {
             Button(
-                onClick = { onProcess(text.trim(), startedAt, scan.ic) },
+                onClick = { onProcess(text.trim(), startedAt, scan.ic, scan.licence) },
                 enabled = canProcess,
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
                     .padding(16.dp).height(56.dp),
             ) {
                 Text(
-                    if (text.isBlank() && scan.ic != null) "Review details" else "Process with AI",
+                    if (text.isBlank() && scannedId) "Review details" else "Process with AI",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(Modifier.width(8.dp))
@@ -89,7 +91,7 @@ fun CaptureScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Scan an IC or a customer form, or type your notes.",
+                "Scan an IC or driving licence, or a customer form, or type your notes.",
                 style = MaterialTheme.typography.titleMedium,
             )
             ScanSection(scan)

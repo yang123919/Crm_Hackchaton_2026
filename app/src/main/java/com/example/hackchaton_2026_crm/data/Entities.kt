@@ -35,10 +35,25 @@ data class Lead(
     val nextAction: String? = null,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
+    /** [LicenceType] name, from a scanned driving licence; needed before a test drive or booking. */
+    val licenceType: String? = null,
+    /** Space-separated classes, e.g. "B2 D". */
+    val licenceClasses: String? = null,
+    val licenceValidTo: LocalDate? = null,
+    /** True: the type was read from the licence photo; false: picked by the salesperson because the photo couldn't tell. */
+    val licenceTypeFromPhoto: Boolean? = null,
 ) {
     val fullName: String get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ")
 
     val maskedIc: String? get() = icNumber?.let(com.example.hackchaton_2026_crm.ocr.IcInfo::maskIc)
+
+    val hasLicence: Boolean get() = licenceType != null || licenceValidTo != null || !licenceClasses.isNullOrBlank()
+
+    /**
+     * The salesperson may only pick the type when the photo couldn't tell. Rows saved before this was
+     * tracked (null) count as read from the photo, so an existing P licence can't be switched to CDL.
+     */
+    val licenceTypeLocked: Boolean get() = licenceTypeFromPhoto ?: (licenceType != null)
 }
 
 object LeadStatus {

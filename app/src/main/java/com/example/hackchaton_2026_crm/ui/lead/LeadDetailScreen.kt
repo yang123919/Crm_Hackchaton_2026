@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,8 +25,14 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import android.widget.Toast
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.hackchaton_2026_crm.data.LicenceRules
+import com.example.hackchaton_2026_crm.data.LicenceType
 import androidx.compose.material3.ButtonDefaults
 import com.example.hackchaton_2026_crm.ui.components.Avatar
 import com.example.hackchaton_2026_crm.ui.theme.Mint
@@ -72,7 +80,24 @@ fun LeadDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lead = state.lead
+    val context = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
+    // Saveable: the camera app may take over the screen while the sheet scans a licence.
+    var booking by rememberSaveable { mutableStateOf(false) }
+    if (booking && lead != null) {
+        BookingSheet(
+            lead = lead,
+            onLicenceScanned = viewModel::saveLicence,
+            onTypeChange = viewModel::setLicenceType,
+            onBook = { kind, date, time ->
+                viewModel.book(kind, date, time) {
+                    booking = false
+                    Toast.makeText(context, "${kind.label} booked", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDismiss = { booking = false },
+        )
+    }
     if (confirmDelete && lead != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -113,6 +138,7 @@ fun LeadDetailScreen(
                     entries = state.entries,
                     onWhatsApp = { onWhatsApp(lead.id) },
                     onVoiceUpdate = { onVoiceUpdate(lead.id) },
+                    onBook = { booking = true },
                 )
             }
         }
@@ -125,6 +151,7 @@ private fun LeadDetailContent(
     entries: List<FollowUpEntry>,
     onWhatsApp: () -> Unit,
     onVoiceUpdate: () -> Unit,
+    onBook: () -> Unit,
 ) {
     val context = LocalContext.current
     // LazyColumn is Compose's RecyclerView: history rows are only composed while on screen.
@@ -154,6 +181,16 @@ private fun LeadDetailContent(
                     ActionButton(Icons.AutoMirrored.Filled.Chat, "WhatsApp", Modifier.weight(1f), emphasis = true, onClick = onWhatsApp)
                     ActionButton(Icons.Filled.Edit, "Update", Modifier.weight(1f), onClick = onVoiceUpdate)
                 }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onBook,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Icon(Icons.Filled.EventAvailable, null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Book test drive / booking")
+                }
 
                 NextStep(lead)
 
@@ -165,8 +202,11 @@ private fun LeadDetailContent(
         }
         if (entries.isNotEmpty()) {
             item {
-                // Fixed window of about two entries; the history scrolls inside it.
-                LazyColumn(Modifier.fillMaxWidth().heightIn(max = HISTORY_WINDOW_HEIGHT)) {
+                // Fixed window of about two entries; the history scrolls inside it. A new entry is added at
+                // the top, and a lazy list keeps its scroll on the old first row, so jump back to the newest.
+                val historyState = rememberLazyListState()
+                LaunchedEffect(entries.first().id) { historyState.scrollToItem(0) }
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = HISTORY_WINDOW_HEIGHT), state = historyState) {
                     items(entries, key = { it.id }) { TimelineEntry(it) }
                 }
             }
@@ -185,6 +225,16 @@ private fun LeadDetailContent(
                 DetailRow("Close date", lead.expectedCloseDate?.let(Format::longDate))
                 DetailRow("Email", lead.email)
                 DetailRow("IC", lead.maskedIc)
+                DetailRow(
+                    "Licence",
+                    if (lead.hasLicence) {
+                        LicenceRules.summary(
+                            LicenceType.fromName(lead.licenceType),
+                            LicenceRules.parseClasses(lead.licenceClasses),
+                            lead.licenceValidTo,
+                        )
+                    } else null,
+                )
                 DetailRow("Gender", lead.gender)
                 DetailRow("Address", lead.address)
                 DetailRow("Status", lead.status)

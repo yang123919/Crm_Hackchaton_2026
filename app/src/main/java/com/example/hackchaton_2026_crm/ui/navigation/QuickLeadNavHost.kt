@@ -63,6 +63,12 @@ data class ReviewRoute(
     val icNumber: String = "",
     val icAddress: String = "",
     val icGender: String = "",
+    /** From a scanned driving licence instead of an IC: [LicenceType] name, "B2 D", ISO date. */
+    val licenceType: String = "",
+    val licenceClasses: String = "",
+    val licenceValidTo: String = "",
+    /** The type was read from the photo (locked), not picked by the salesperson. */
+    val licenceTypeFromPhoto: Boolean = false,
 )
 @Serializable data class FollowUpRoute(val leadId: Long)
 @Serializable object SettingsRoute
@@ -160,12 +166,18 @@ private fun AppNav(authState: AuthState) {
         composable<CaptureRoute> {
             CaptureScreen(
                 onBack = { back() },
-                onProcess = { transcript, startedAt, ic ->
+                onProcess = { transcript, startedAt, scannedIc, licence ->
+                    // One ID is enough: a licence carries the same name, IC number and address as the IC.
+                    val ic = scannedIc ?: licence?.toIcInfo()
                     go(
                         ReviewRoute(
                             transcript, startedAt,
                             icName = ic?.fullName.orEmpty(), icNumber = ic?.icNumber.orEmpty(),
                             icAddress = ic?.address.orEmpty(), icGender = ic?.gender.orEmpty(),
+                            licenceType = licence?.type?.name.orEmpty(),
+                            licenceClasses = licence?.classes.orEmpty().joinToString(" "),
+                            licenceValidTo = licence?.validTo?.toString().orEmpty(),
+                            licenceTypeFromPhoto = licence?.typeFromPhoto == true,
                         ),
                     )
                 },

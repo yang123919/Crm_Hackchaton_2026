@@ -122,6 +122,9 @@ object MyKadParser {
 
     private val icCandidate = Regex("""[0-9OoQDIl|SBZ]{6}\s*[-–—.:]?\s*[0-9OoQDIl|SBZ]{2}\s*[-–—.:]?\s*[0-9OoQDIl|SBZ]{4}""")
 
+    /** The first valid IC number in [line], formatted YYMMDD-PB-####; also used for the number printed on a driving licence. */
+    fun icIn(line: String, today: LocalDate): String? = findIc(line, today)?.formatted
+
     private fun findIc(line: String, today: LocalDate): Ic? {
         for (m in icCandidate.findAll(line)) {
             val digits = m.value.filter { it.isLetterOrDigit() || it == '|' }.map { lookalikes[it] ?: it }.joinToString("")

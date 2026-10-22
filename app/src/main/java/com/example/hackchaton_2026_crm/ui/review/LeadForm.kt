@@ -6,6 +6,7 @@ import com.example.hackchaton_2026_crm.ai.Normalizer
 import com.example.hackchaton_2026_crm.data.CaptureMetric
 import com.example.hackchaton_2026_crm.data.FollowUpEntry
 import com.example.hackchaton_2026_crm.data.Lead
+import com.example.hackchaton_2026_crm.data.LicenceType
 import com.example.hackchaton_2026_crm.data.ReferenceLists
 import com.example.hackchaton_2026_crm.ocr.IcInfo
 import com.example.hackchaton_2026_crm.ocr.IcNumbers
@@ -35,6 +36,11 @@ data class LeadForm(
     val nextDate: LocalDate? = null,
     val stage: String = ReferenceLists.DEFAULT_STAGE,
     val summary: String = "",
+    /** From a scanned driving licence; not editable here, checked again when booking. */
+    val licenceType: LicenceType? = null,
+    val licenceTypeFromPhoto: Boolean = false,
+    val licenceClasses: List<String> = emptyList(),
+    val licenceValidTo: LocalDate? = null,
     /** ✨ marks. */
     val aiFilled: Set<LeadField> = emptySet(),
     /** "!" marks; cleared once the user edits the field. */
@@ -81,7 +87,16 @@ data class LeadForm(
         tradeInYear = Normalizer.year(tradeInYear.toIntOrNull(), today).takeIf { tradeIn },
         nextFollowUpAt = nextDate,
         nextAction = nextAction.trim().ifBlank { null },
+        licenceType = licenceType?.name,
+        licenceTypeFromPhoto = licenceTypeFromPhoto.takeIf { hasLicence },
+        licenceClasses = licenceClasses.joinToString(" ").ifBlank { null },
+        licenceValidTo = licenceValidTo,
     )
+
+    val hasLicence get() = licenceType != null || licenceClasses.isNotEmpty() || licenceValidTo != null
+
+    fun withLicence(type: LicenceType?, typeFromPhoto: Boolean, classes: List<String>, validTo: LocalDate?) =
+        copy(licenceType = type, licenceTypeFromPhoto = typeFromPhoto, licenceClasses = classes, licenceValidTo = validTo)
 
     fun toFirstEntry(today: LocalDate, transcript: String) = FollowUpEntry(
         leadId = 0,

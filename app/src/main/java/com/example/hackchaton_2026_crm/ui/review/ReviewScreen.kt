@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hackchaton_2026_crm.ai.LeadField
 import com.example.hackchaton_2026_crm.data.Lead
+import com.example.hackchaton_2026_crm.data.LicenceRules
 import com.example.hackchaton_2026_crm.data.ReferenceLists
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.components.AiMark
@@ -198,6 +199,14 @@ private fun ReviewForm(
                 Spacer(Modifier.weight(1f))
                 Text("Demo AI", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
+
+        if (form.hasLicence) {
+            Text(
+                "Driving licence: " + LicenceRules.summary(form.licenceType, form.licenceClasses, form.licenceValidTo),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
 
         val field = @Composable { f: LeadField, label: String, value: String, keyboard: KeyboardType, set: LeadForm.(String) -> LeadForm ->

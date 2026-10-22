@@ -73,6 +73,10 @@ object DataHealth {
             tradeInBrand = k.tradeInBrand.filled() ?: o.tradeInBrand.filled(),
             tradeInModel = k.tradeInModel.filled() ?: o.tradeInModel.filled(),
             tradeInYear = k.tradeInYear ?: o.tradeInYear,
+            licenceType = k.licenceType ?: o.licenceType,
+            licenceTypeFromPhoto = if (k.licenceType != null) k.licenceTypeFromPhoto else o.licenceTypeFromPhoto,
+            licenceClasses = k.licenceClasses.filled() ?: o.licenceClasses.filled(),
+            licenceValidTo = k.licenceValidTo ?: o.licenceValidTo,
             createdAt = minOf(k.createdAt, o.createdAt),
         )
     }

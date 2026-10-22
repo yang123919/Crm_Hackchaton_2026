@@ -10,6 +10,8 @@ import com.example.hackchaton_2026_crm.ai.LeadField
 import com.example.hackchaton_2026_crm.ai.Normalizer
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadRepository
+import com.example.hackchaton_2026_crm.data.LicenceRules
+import com.example.hackchaton_2026_crm.data.LicenceType
 import com.example.hackchaton_2026_crm.data.SettingsRepository
 import com.example.hackchaton_2026_crm.ocr.IcInfo
 import com.example.hackchaton_2026_crm.ocr.IcNumbers
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 
 sealed interface ReviewPhase {
     /** [step] drives the "✓ Reading your notes…" checklist; [slow] shows the escape hatches. */
@@ -59,6 +62,17 @@ class ReviewViewModel(
     private val ic = IcInfo(
         fullName = route.icName, icNumber = route.icNumber, address = route.icAddress, gender = route.icGender,
     )
+    // Named "scanned…" on purpose: inside a LeadForm extension, plain licenceType etc. would mean the
+    // form's own (empty) fields, not these.
+    private val scannedLicenceType = LicenceType.fromName(route.licenceType)
+    private val scannedLicenceClasses = LicenceRules.parseClasses(route.licenceClasses)
+    private val scannedLicenceValidTo =
+        route.licenceValidTo.takeIf { it.isNotEmpty() }?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+    private val scannedLicenceTypeFromPhoto = route.licenceTypeFromPhoto
+
+    /** IC (or licence) details, then the licence's type/class/expiry when a licence was scanned. */
+    private fun LeadForm.withScans() = withIc(ic)
+        .withLicence(scannedLicenceType, scannedLicenceTypeFromPhoto, scannedLicenceClasses, scannedLicenceValidTo)
 
     private val _state = MutableStateFlow(ReviewUiState())
     val state: StateFlow<ReviewUiState> = _state.asStateFlow()
@@ -78,7 +92,7 @@ class ReviewViewModel(
 
     private fun startFromIcOnly() {
         viewModelScope.launch {
-            val form = LeadForm(outlet = settings.current().defaultOutlet).withIc(ic)
+            val form = LeadForm(outlet = settings.current().defaultOutlet).withScans()
             _state.update { it.copy(phase = ReviewPhase.Editing, form = form) }
             checkDuplicate(form)
         }
@@ -101,7 +115,7 @@ class ReviewViewModel(
                 val today = Format.today()
                 val extraction = (if (demo) ai.demo else ai).extractLead(transcript, today)
                 val form = LeadForm.from(Normalizer.normalizeLead(extraction, today), settings.current().defaultOutlet)
-                    .withIc(ic)
+                    .withScans()
                 _state.update { it.copy(phase = ReviewPhase.Editing, form = form, usedDemo = demo) }
                 checkDuplicate(form)
             } catch (e: CancellationException) {
@@ -121,7 +135,7 @@ class ReviewViewModel(
             _state.update {
                 it.copy(
                     phase = ReviewPhase.Editing,
-                    form = LeadForm(outlet = settings.current().defaultOutlet, summary = transcript).withIc(ic),
+                    form = LeadForm(outlet = settings.current().defaultOutlet, summary = transcript).withScans(),
                     usedDemo = false,
                 )
             }

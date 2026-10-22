@@ -21,7 +21,7 @@ class Converters {
 
 @Database(
     entities = [Lead::class, FollowUpEntry::class, CaptureMetric::class, User::class],
-    version = 3,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -52,9 +52,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Customers can carry the driving licence type, classes and expiry needed to book a test drive. */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `licenceType` TEXT")
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `licenceClasses` TEXT")
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `licenceValidTo` TEXT")
+            }
+        }
+
+        /** Remembers whether the licence type was read from the photo (locked) or picked by the salesperson. */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE `leads` ADD COLUMN `licenceTypeFromPhoto` INTEGER")
+            }
+        }
+
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "quicklead.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
     }

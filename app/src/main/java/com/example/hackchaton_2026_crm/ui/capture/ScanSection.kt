@@ -44,12 +44,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.compose.material.icons.filled.Badge
+import com.example.hackchaton_2026_crm.data.LicenceRules
+import com.example.hackchaton_2026_crm.data.LicenceType
 import com.example.hackchaton_2026_crm.ocr.FormScanner
 import com.example.hackchaton_2026_crm.ocr.IcInfo
 import com.example.hackchaton_2026_crm.ocr.IcScanner
+import com.example.hackchaton_2026_crm.ocr.LicenceInfo
+import com.example.hackchaton_2026_crm.ocr.LicenceScanner
 import com.example.hackchaton_2026_crm.ocr.MyKadParser
 import com.example.hackchaton_2026_crm.ocr.ScanException
 import com.example.hackchaton_2026_crm.ui.Format
+import com.example.hackchaton_2026_crm.ui.components.LicencePanel
 import com.example.hackchaton_2026_crm.ui.theme.LocalStatusColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -64,7 +70,7 @@ class PhotoSource internal constructor(val takePhoto: () -> Unit, val pickPhoto:
  * soon as [onPhoto] returns, so no picture of an ID or form is left in app storage.
  */
 @Composable
-private fun rememberPhotoSource(onPhoto: suspend (Uri) -> Unit): PhotoSource {
+internal fun rememberPhotoSource(onPhoto: suspend (Uri) -> Unit): PhotoSource {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var cameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -112,15 +118,41 @@ private val IcInfoSaver = listSaver<IcInfo?, String>(
     },
 )
 
-/** What the Capture screen needs from the two scanners. */
+private val LicenceInfoSaver = listSaver<LicenceInfo?, String>(
+    save = { l ->
+        if (l == null) emptyList()
+        else listOf(
+            l.fullName, l.icNumber, l.address, l.type?.name.orEmpty(), l.classes.joinToString(" "),
+            l.validFrom?.toString().orEmpty(), l.validTo?.toString().orEmpty(), l.warnings.joinToString("\n"),
+            l.typeFromPhoto.toString(),
+        )
+    },
+    restore = { s ->
+        if (s.isEmpty()) null
+        else LicenceInfo(
+            fullName = s[0], icNumber = s[1], address = s[2], type = LicenceType.fromName(s[3]),
+            classes = LicenceRules.parseClasses(s[4]),
+            validFrom = s[5].takeIf { it.isNotEmpty() }?.let { LocalDate.parse(it) },
+            validTo = s[6].takeIf { it.isNotEmpty() }?.let { LocalDate.parse(it) },
+            warnings = s[7].split("\n").filter { it.isNotEmpty() },
+            typeFromPhoto = s.getOrNull(8) == "true",
+        )
+    },
+)
+
+/** What the Capture screen needs from the scanners. Only one ID is kept: an IC or a driving licence. */
 class ScanState internal constructor(
     val ic: IcInfo?,
+    val licence: LicenceInfo?,
     val busy: Boolean,
     val message: String?,
     val isError: Boolean,
     internal val icSource: PhotoSource,
+    internal val licenceSource: PhotoSource,
     internal val formSource: PhotoSource,
     val clearIc: () -> Unit,
+    val clearLicence: () -> Unit,
+    val setLicenceType: (LicenceType) -> Unit,
 )
 
 /**
@@ -132,6 +164,7 @@ class ScanState internal constructor(
 fun rememberScan(onFormText: (String) -> Unit): ScanState {
     val context = LocalContext.current
     var ic by rememberSaveable(stateSaver = IcInfoSaver) { mutableStateOf<IcInfo?>(null) }
+    var licence by rememberSaveable(stateSaver = LicenceInfoSaver) { mutableStateOf<LicenceInfo?>(null) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
@@ -160,6 +193,22 @@ fun rememberScan(onFormText: (String) -> Unit): ScanState {
                 "Couldn't find an IC in that photo. Fill the card edge to edge and avoid glare."
             } else {
                 ic = result
+                licence = null
+                null
+            }
+        }
+    }
+    // A licence carries the same name, IC number and address, plus what an IC can't show: whether
+    // the person has passed (CDL / PDL / LDL). It replaces a scanned IC; one ID is enough.
+    val licenceSource = rememberPhotoSource { uri ->
+        run {
+            val result = LicenceScanner.scan(context, uri)
+            if (result.isEmpty) {
+                isError = true
+                "Couldn't read a driving licence in that photo. Hold the card upright, fill the frame and avoid glare."
+            } else {
+                licence = result
+                ic = null
                 null
             }
         }
@@ -180,7 +229,13 @@ fun rememberScan(onFormText: (String) -> Unit): ScanState {
             }
         }
     }
-    return ScanState(ic, busy, message, isError, icSource, formSource, clearIc = { ic = null })
+    return ScanState(
+        ic, licence, busy, message, isError, icSource, licenceSource, formSource,
+        clearIc = { ic = null },
+        clearLicence = { licence = null },
+        // A type read from the photo is locked; only an unreadable one may be picked by hand.
+        setLicenceType = { t -> licence = licence?.takeIf { !it.typeFromPhoto }?.copy(type = t) ?: licence },
+    )
 }
 
 @Composable
@@ -195,11 +250,25 @@ fun ScanSection(scan: ScanState, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
             )
             ScanButton(
-                label = "Scan form",
-                icon = Icons.Filled.Description,
-                source = scan.formSource,
+                label = if (scan.licence == null) "Scan licence" else "Rescan licence",
+                icon = Icons.Filled.Badge,
+                source = scan.licenceSource,
                 enabled = !scan.busy,
                 modifier = Modifier.weight(1f),
+            )
+        }
+        ScanButton(
+            label = "Scan form",
+            icon = Icons.Filled.Description,
+            source = scan.formSource,
+            enabled = !scan.busy,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (scan.ic == null && scan.licence == null) {
+            Text(
+                "One ID is enough: IC or driving licence. A CDL licence is needed later to book a test drive.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (scan.busy) {
@@ -217,11 +286,25 @@ fun ScanSection(scan: ScanState, modifier: Modifier = Modifier) {
             )
         }
         scan.ic?.let { IcCard(it, onRemove = scan.clearIc) }
+        scan.licence?.let { l ->
+            LicencePanel(
+                title = l.fullName.ifEmpty { "Name not read" },
+                maskedIc = IcInfo.maskIc(l.icNumber),
+                type = l.type,
+                typeLocked = l.typeFromPhoto,
+                classes = l.classes,
+                validTo = l.validTo,
+                warnings = l.warnings,
+                onTypeChange = scan.setLicenceType,
+                onRemove = scan.clearLicence,
+            )
+        }
     }
 }
 
+/** Opens a small menu: take a photo or pick one from the gallery. */
 @Composable
-private fun ScanButton(label: String, icon: ImageVector, source: PhotoSource, enabled: Boolean, modifier: Modifier) {
+internal fun ScanButton(label: String, icon: ImageVector, source: PhotoSource, enabled: Boolean, modifier: Modifier) {
     var menu by remember { mutableStateOf(false) }
     Box(modifier) {
         OutlinedButton(onClick = { menu = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
