@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Backup demo recordings (large binaries)
+/demo-video/

@@ -38,6 +38,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -152,8 +155,14 @@ private fun TimeSaved(seconds: Int) {
     Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Filled.Timer, null, tint = LocalStatusColors.current.ok, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text("Avg $label per lead", fontWeight = FontWeight.Bold)
-        Text("  (vs ~5 min on laptop)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // One Text so it wraps as a sentence on narrow screens / large fonts.
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("Avg $label per lead") }
+                withStyle(SpanStyle(color = muted)) { append("  (vs ~5 min on laptop)") }
+            },
+        )
     }
 }
 
