@@ -2,6 +2,8 @@ package com.example.hackchaton_2026_crm.ui.navigation
 
 import android.os.SystemClock
 import android.widget.Toast
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -120,15 +122,16 @@ private fun AppNav(authState: AuthState) {
         }
     }
 
-    // The default is a 700ms cross-fade, which leaves both screens' bars ghosting over each other and
-    // reads as a "refresh". Short transitions keep the old screen from showing through.
+    // The default is a 700ms cross-fade; fading *both* screens also lets the window background show
+    // through mid-way (a light flash behind the navy bars). So only the screen on top animates, sliding
+    // over the other one, which stays fully opaque underneath until the animation ends.
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        enterTransition = { fadeIn(tween(160)) + slideInHorizontally(tween(220)) { it / 10 } },
-        exitTransition = { fadeOut(tween(100)) },
-        popEnterTransition = { fadeIn(tween(160)) },
-        popExitTransition = { fadeOut(tween(120)) + slideOutHorizontally(tween(200)) { it / 10 } },
+        enterTransition = { fadeIn(tween(200)) + slideInHorizontally(tween(260)) { it / 8 } },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { fadeOut(tween(200)) + slideOutHorizontally(tween(240)) { it / 8 } },
     ) {
         composable<LoginRoute> {
             LoginScreen(onGoToRegister = { go(RegisterRoute) })

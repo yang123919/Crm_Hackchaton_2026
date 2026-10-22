@@ -55,6 +55,8 @@ import com.example.hackchaton_2026_crm.data.LeadGroup
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.Intents
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Warning
@@ -64,10 +66,8 @@ import com.example.hackchaton_2026_crm.ui.components.DelayedProgress
 import com.example.hackchaton_2026_crm.ui.components.QuickLeadWordmark
 import com.example.hackchaton_2026_crm.ui.components.SectionHeader
 import com.example.hackchaton_2026_crm.ui.components.TopAppBar
-import com.example.hackchaton_2026_crm.ui.theme.LinkTeal
 import com.example.hackchaton_2026_crm.ui.theme.LocalStatusColors
 import com.example.hackchaton_2026_crm.ui.theme.Mint
-import com.example.hackchaton_2026_crm.ui.theme.MintLight
 import com.example.hackchaton_2026_crm.ui.theme.Navy
 import com.example.hackchaton_2026_crm.ui.theme.Teal
 
@@ -202,44 +202,64 @@ private fun TimeSaved(seconds: Int) {
 @Composable
 private fun CounterRow(state: TodayUiState, onOpenGroup: (LeadGroup) -> Unit) {
     val status = LocalStatusColors.current
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Same height for all three cards: IntrinsicSize.Min + fillMaxHeight, and every label takes two lines.
+    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Counter(
             state.overdue.size, "Overdue", Icons.Filled.Warning,
-            status.overdue, status.overdueContainer, Modifier.weight(1f),
+            status.overdue, Modifier.weight(1f).fillMaxHeight(),
         ) { onOpenGroup(LeadGroup.OVERDUE) }
         Counter(
             state.dueToday.size, "Today", Icons.Filled.EventAvailable,
-            status.dueToday, status.dueTodayContainer, Modifier.weight(1f),
+            MaterialTheme.colorScheme.primary, Modifier.weight(1f).fillMaxHeight(),
         ) { onOpenGroup(LeadGroup.DUE_TODAY) }
         Counter(
             state.capturedThisWeek, "This wk\ncaptured", Icons.Filled.PersonAdd,
-            LinkTeal, MintLight, Modifier.weight(1f),
+            MaterialTheme.colorScheme.secondary, Modifier.weight(1f).fillMaxHeight(),
         ) { onOpenGroup(LeadGroup.CAPTURED_THIS_WEEK) }
     }
 }
 
+/** White card with a tinted icon circle, as in the Today wireframe; only the icon carries the status colour. */
 @Composable
 private fun Counter(
     value: Int,
     label: String,
     icon: ImageVector,
     color: Color,
-    container: Color,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
     Card(
         onClick = onClick,
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = container),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = CardDefaults.outlinedCardBorder(),
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
-            Text("$value", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = color)
-            Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, color = color)
+            Box(
+                Modifier.size(36.dp).background(color.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            }
+            Text(
+                "$value",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                minLines = 2,
+                maxLines = 2,
+            )
         }
     }
 }
