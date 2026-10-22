@@ -31,6 +31,8 @@ class AiRouter(
     private val real: AiService?,
     val demo: AiService,
 ) : AiService {
+    val hasRealAi: Boolean get() = real != null
+
     suspend fun usesDemo(): Boolean = real == null || settings.current().demoMode
 
     private suspend fun pick(): AiService = if (usesDemo()) demo else real!!

@@ -72,6 +72,15 @@ fun TodayScreen(
                     Text("QuickLead", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 },
                 actions = {
+                    if (state.demoMode) {
+                        Text(
+                            "DEMO",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 4.dp),
+                        )
+                    }
                     if (onOpenLeads != null) {
                         IconButton(onClick = onOpenLeads) { Icon(Icons.Filled.Search, "Customers") }
                     }

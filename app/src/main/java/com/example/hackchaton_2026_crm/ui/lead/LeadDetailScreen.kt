@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -134,10 +135,16 @@ private fun LeadDetailContent(
 
 @Composable
 private fun ActionButton(icon: ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
-    FilledTonalButton(onClick = onClick, modifier = modifier.height(48.dp)) {
-        Icon(icon, null, Modifier.size(18.dp))
-        Spacer(Modifier.width(4.dp))
-        Text(label, maxLines = 1)
+    // Icon above the label so "WhatsApp" fits three-across even with large system fonts.
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.height(64.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, Modifier.size(20.dp))
+            Text(label, maxLines = 1, style = MaterialTheme.typography.labelMedium)
+        }
     }
 }
 

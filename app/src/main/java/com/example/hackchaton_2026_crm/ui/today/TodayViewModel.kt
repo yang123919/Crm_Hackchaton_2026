@@ -21,11 +21,13 @@ data class TodayUiState(
     val overdue: List<Lead> = emptyList(),
     val dueToday: List<Lead> = emptyList(),
     val capturedThisWeek: Int = 0,
+    val demoMode: Boolean = false,
 )
 
 class TodayViewModel(
     repository: LeadRepository,
     settings: SettingsRepository,
+    hasRealAi: Boolean,
 ) : ViewModel() {
     val state: StateFlow<TodayUiState> = combine(
         repository.observeLeads(),
@@ -40,10 +42,11 @@ class TodayViewModel(
             overdue = open.filter { it.nextFollowUpAt!! < today }.sortedBy { it.nextFollowUpAt },
             dueToday = open.filter { it.nextFollowUpAt == today }.sortedBy { it.fullName },
             capturedThisWeek = captured,
+            demoMode = prefs.demoMode || !hasRealAi,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
     companion object {
-        val Factory = containerFactory { TodayViewModel(it.leadRepository, it.settingsRepository) }
+        val Factory = containerFactory { TodayViewModel(it.leadRepository, it.settingsRepository, it.aiService.hasRealAi) }
     }
 }

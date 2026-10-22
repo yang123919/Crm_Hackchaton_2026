@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
 import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
+import com.example.hackchaton_2026_crm.ui.settings.SettingsScreen
 import com.example.hackchaton_2026_crm.ui.today.TodayScreen
 import com.example.hackchaton_2026_crm.ui.update.FollowUpScreen
 import com.example.hackchaton_2026_crm.ui.whatsapp.WhatsAppSheet
@@ -24,6 +25,7 @@ import kotlinx.serialization.Serializable
 @Serializable object CaptureRoute
 @Serializable data class ReviewRoute(val transcript: String, val startedAtMillis: Long)
 @Serializable data class FollowUpRoute(val leadId: Long)
+@Serializable object SettingsRoute
 
 @Composable
 fun QuickLeadNavHost() {
@@ -41,7 +43,7 @@ fun QuickLeadNavHost() {
                 onCapture = { navController.navigate(CaptureRoute) },
                 onOpenLead = { navController.navigate(LeadDetailRoute(it)) },
                 onWhatsApp = openWhatsApp,
-                onOpenSettings = {},
+                onOpenSettings = { navController.navigate(SettingsRoute) },
                 onOpenLeads = null,
             )
         }
@@ -71,6 +73,9 @@ fun QuickLeadNavHost() {
                 onWhatsApp = openWhatsApp,
                 onVoiceUpdate = { navController.navigate(FollowUpRoute(it)) },
             )
+        }
+        composable<SettingsRoute> {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable<FollowUpRoute> {
             FollowUpScreen(
