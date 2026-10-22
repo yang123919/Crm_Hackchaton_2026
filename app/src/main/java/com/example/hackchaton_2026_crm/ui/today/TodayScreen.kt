@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hackchaton_2026_crm.data.Lead
+import com.example.hackchaton_2026_crm.data.LeadGroup
 import com.example.hackchaton_2026_crm.ui.Format
 import com.example.hackchaton_2026_crm.ui.Intents
 import com.example.hackchaton_2026_crm.ui.components.SectionHeader
@@ -65,6 +66,7 @@ fun TodayScreen(
     onWhatsApp: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenLeads: (() -> Unit)?,
+    onOpenGroup: (LeadGroup) -> Unit,
     viewModel: TodayViewModel = viewModel(factory = TodayViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -117,7 +119,7 @@ fun TodayScreen(
             item {
                 Text(state.greeting, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(12.dp))
-                CounterRow(state)
+                CounterRow(state, onOpenGroup)
                 state.avgCaptureSeconds?.let { TimeSaved(it) }
             }
             if (state.overdue.isEmpty() && state.dueToday.isEmpty()) {
@@ -167,22 +169,27 @@ private fun TimeSaved(seconds: Int) {
 }
 
 @Composable
-private fun CounterRow(state: TodayUiState) {
+private fun CounterRow(state: TodayUiState, onOpenGroup: (LeadGroup) -> Unit) {
     val status = LocalStatusColors.current
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Counter(state.overdue.size, "Overdue", status.overdue, status.overdueContainer, Modifier.weight(1f))
-        Counter(state.dueToday.size, "Today", status.dueToday, status.dueTodayContainer, Modifier.weight(1f))
+        Counter(state.overdue.size, "Overdue", status.overdue, status.overdueContainer, Modifier.weight(1f)) {
+            onOpenGroup(LeadGroup.OVERDUE)
+        }
+        Counter(state.dueToday.size, "Today", status.dueToday, status.dueTodayContainer, Modifier.weight(1f)) {
+            onOpenGroup(LeadGroup.DUE_TODAY)
+        }
         Counter(
             state.capturedThisWeek, "This wk\ncaptured",
             MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.surfaceContainer,
             Modifier.weight(1f),
-        )
+        ) { onOpenGroup(LeadGroup.CAPTURED_THIS_WEEK) }
     }
 }
 
 @Composable
-private fun Counter(value: Int, label: String, color: Color, container: Color, modifier: Modifier) {
+private fun Counter(value: Int, label: String, color: Color, container: Color, modifier: Modifier, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = container),
     ) {

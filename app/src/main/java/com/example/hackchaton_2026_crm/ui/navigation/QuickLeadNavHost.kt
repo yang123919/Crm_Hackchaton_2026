@@ -22,12 +22,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.hackchaton_2026_crm.QuickLeadApp
 import com.example.hackchaton_2026_crm.auth.AuthState
+import com.example.hackchaton_2026_crm.data.LeadGroup
 import com.example.hackchaton_2026_crm.ui.auth.LoginScreen
 import com.example.hackchaton_2026_crm.ui.auth.RegisterScreen
 import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
 import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
 import com.example.hackchaton_2026_crm.ui.settings.SettingsScreen
+import com.example.hackchaton_2026_crm.ui.today.LeadListScreen
 import com.example.hackchaton_2026_crm.ui.today.TodayScreen
 import com.example.hackchaton_2026_crm.ui.update.FollowUpScreen
 import com.example.hackchaton_2026_crm.ui.whatsapp.WhatsAppSheet
@@ -50,6 +52,7 @@ data class ReviewRoute(
 )
 @Serializable data class FollowUpRoute(val leadId: Long)
 @Serializable object SettingsRoute
+@Serializable data class LeadListRoute(val group: LeadGroup)
 
 @Composable
 fun QuickLeadNavHost() {
@@ -103,6 +106,14 @@ private fun AppNav(authState: AuthState) {
                 onWhatsApp = openWhatsApp,
                 onOpenSettings = { navController.navigate(SettingsRoute) },
                 onOpenLeads = null,
+                onOpenGroup = { navController.navigate(LeadListRoute(it)) },
+            )
+        }
+        composable<LeadListRoute> {
+            LeadListScreen(
+                onBack = { navController.popBackStack() },
+                onOpenLead = { navController.navigate(LeadDetailRoute(it)) },
+                onWhatsApp = openWhatsApp,
             )
         }
         composable<CaptureRoute> {

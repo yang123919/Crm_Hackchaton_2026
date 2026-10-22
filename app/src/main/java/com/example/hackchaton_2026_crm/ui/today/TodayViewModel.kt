@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hackchaton_2026_crm.data.Lead
 import com.example.hackchaton_2026_crm.data.LeadRepository
-import com.example.hackchaton_2026_crm.data.ReferenceLists
+import com.example.hackchaton_2026_crm.data.LeadGroups
 import com.example.hackchaton_2026_crm.data.SeedData
 import com.example.hackchaton_2026_crm.data.SettingsRepository
 import com.example.hackchaton_2026_crm.ui.Format
@@ -44,18 +44,16 @@ class TodayViewModel(
 ) : ViewModel() {
     val state: StateFlow<TodayUiState> = combine(
         repository.observeLeads(),
-        repository.observeCapturedThisWeek(),
         settings.settings,
         repository.observeMetrics(),
-    ) { leads, captured, prefs, metrics ->
+    ) { leads, prefs, metrics ->
         val today = Format.today()
-        val open = leads.filter { it.nextFollowUpAt != null && it.salesStage !in ReferenceLists.closedStages }
         TodayUiState(
             loading = false,
             greeting = "${Format.greeting(LocalTime.now(SeedData.ZONE).hour)}, ${prefs.salespersonName}",
-            overdue = open.filter { it.nextFollowUpAt!! < today }.sortedBy { it.nextFollowUpAt },
-            dueToday = open.filter { it.nextFollowUpAt == today }.sortedBy { it.fullName },
-            capturedThisWeek = captured,
+            overdue = LeadGroups.overdue(leads, today),
+            dueToday = LeadGroups.dueToday(leads, today),
+            capturedThisWeek = LeadGroups.capturedThisWeek(leads, today).size,
             demoMode = prefs.demoMode || !hasRealAi,
             avgCaptureSeconds = averageCaptureSeconds(metrics),
         )
