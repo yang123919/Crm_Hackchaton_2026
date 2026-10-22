@@ -9,13 +9,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.hackchaton_2026_crm.QuickLeadApp
 import com.example.hackchaton_2026_crm.ui.Intents
+import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
+import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
 import com.example.hackchaton_2026_crm.ui.today.TodayScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable object TodayRoute
 @Serializable data class LeadDetailRoute(val leadId: Long)
+@Serializable object CaptureRoute
+@Serializable data class ReviewRoute(val transcript: String, val startedAtMillis: Long)
 
 @Composable
 fun QuickLeadNavHost() {
@@ -32,11 +36,31 @@ fun QuickLeadNavHost() {
     NavHost(navController = navController, startDestination = TodayRoute) {
         composable<TodayRoute> {
             TodayScreen(
-                onCapture = { Toast.makeText(context, "Capture comes in step 3", Toast.LENGTH_SHORT).show() },
+                onCapture = { navController.navigate(CaptureRoute) },
                 onOpenLead = { navController.navigate(LeadDetailRoute(it)) },
                 onWhatsApp = openWhatsApp,
                 onOpenSettings = {},
                 onOpenLeads = null,
+            )
+        }
+        composable<CaptureRoute> {
+            CaptureScreen(
+                onBack = { navController.popBackStack() },
+                onProcess = { transcript, startedAt -> navController.navigate(ReviewRoute(transcript, startedAt)) },
+            )
+        }
+        composable<ReviewRoute> {
+            // After saving (or opening the duplicate) the capture flow is done: Back goes to Today.
+            val openLeadFromCapture: (Long) -> Unit = { id ->
+                navController.navigate(LeadDetailRoute(id)) { popUpTo<TodayRoute>() }
+            }
+            ReviewScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { id ->
+                    Toast.makeText(context, "Customer saved", Toast.LENGTH_SHORT).show()
+                    openLeadFromCapture(id)
+                },
+                onOpenExisting = openLeadFromCapture,
             )
         }
         composable<LeadDetailRoute> {
