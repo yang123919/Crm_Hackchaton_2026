@@ -3,6 +3,13 @@
 > Step 1 of the vibe-coding workflow (Plan → Wireframes → Build → Review).
 > Working name "QuickLead" — rename in question 6/.
 
+> **Current status (2026-10-22).** The text below is the original plan and is partly out of date. Where the app differs:
+> - The microphone/speech input was **removed**; capture is by typing notes, scanning an IC, or scanning a form.
+> - **Login was added** (Email + password, stored locally; no Google or other third-party login).
+> - **Added beyond the plan:** delete customer, IC and form scanning, **AI Data Health** (duplicates and wrong details, with one-tap fixes), a navy-and-mint visual style, and the "QL" app icon.
+> - Not done yet: customers list with search, editing a saved customer, SuiteCRM sync, CI.
+> - Nothing from the latest changes has been compiled or run yet. See [QuickLead-改进建议.md](QuickLead-改进建议.md) for the full progress table and open issues.
+
 ## Description
 
 QuickLead is an Android companion app for the CS Group dealership CRM (a customised SuiteCRM 7 built by GCR). Today, salespeople have to wait until they are at a laptop to key in customers, so data is entered late, fields are left empty, and follow-ups are forgotten: the Kanban board shows many leads stuck in "Follow Up" with overdue dates, and follow-up history is typed as free text into one Description box. QuickLead lets a salesperson capture a customer in about 20 seconds by speaking after the meeting. AI converts the messy speech into clean, CRM-formatted fields (the "one format" they convert into by hand today), the salesperson confirms and saves, and the app creates a dated follow-up with a reminder and an AI-drafted WhatsApp message. The goal for the hackathon is one complete, reliable demo flow on a real phone, plus a visible "time saved" number for the business-impact slide.
