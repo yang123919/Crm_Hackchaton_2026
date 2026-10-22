@@ -8,6 +8,7 @@ import com.example.hackchaton_2026_crm.data.AppDatabase
 import com.example.hackchaton_2026_crm.data.LeadRepository
 import com.example.hackchaton_2026_crm.data.SeedData
 import com.example.hackchaton_2026_crm.data.SettingsRepository
+import com.example.hackchaton_2026_crm.reminder.Reminders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,5 +39,6 @@ class QuickLeadApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         appScope.launch { SeedData.seedIfEmpty(container.database.leadDao()) }
+        Reminders.schedule(this)
     }
 }

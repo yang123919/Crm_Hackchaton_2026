@@ -16,7 +16,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.ui.platform.LocalContext
+import com.example.hackchaton_2026_crm.reminder.Reminders
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -71,6 +74,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -118,6 +122,18 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::setDemo,
                     enabled = viewModel.hasRealAi,
                 )
+            }
+
+            Column {
+                Text("Follow-up reminders", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Daily at 9:00 am for overdue and due-today customers.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedButton(onClick = { Reminders.sendNow(context) }, modifier = Modifier.padding(top = 8.dp)) {
+                    Text("Send test reminder now")
+                }
             }
 
             Column {

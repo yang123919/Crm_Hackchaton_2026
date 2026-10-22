@@ -7,6 +7,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalDate
 
 @Dao
 interface LeadDao {
@@ -21,6 +22,10 @@ interface LeadDao {
 
     @Query("SELECT * FROM leads WHERE mobile = :mobile LIMIT 1")
     suspend fun findByMobile(mobile: String): Lead?
+
+    /** Dates are stored as ISO strings, so string comparison orders them correctly. */
+    @Query("SELECT * FROM leads WHERE nextFollowUpAt IS NOT NULL AND nextFollowUpAt <= :today")
+    suspend fun dueOnOrBefore(today: LocalDate): List<Lead>
 
     @Query("SELECT COUNT(*) FROM leads")
     suspend fun count(): Int

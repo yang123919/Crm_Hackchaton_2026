@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.example.hackchaton_2026_crm.data.CaptureMetric
+import java.time.Duration
 import java.time.LocalTime
+import kotlin.math.roundToInt
 
 data class TodayUiState(
     val loading: Boolean = true,
@@ -22,7 +25,17 @@ data class TodayUiState(
     val dueToday: List<Lead> = emptyList(),
     val capturedThisWeek: Int = 0,
     val demoMode: Boolean = false,
+    /** Average mic-tap → save time for new customers; null until the first capture. */
+    val avgCaptureSeconds: Int? = null,
 )
+
+/** Captures longer than 30 min were abandoned and resumed, not real capture time. */
+fun averageCaptureSeconds(metrics: List<CaptureMetric>): Int? = metrics
+    .filter { it.type == CaptureMetric.TYPE_NEW_LEAD }
+    .map { Duration.between(it.startedAt, it.savedAt).seconds }
+    .filter { it in 1..1_800 }
+    .takeIf { it.isNotEmpty() }
+    ?.average()?.roundToInt()
 
 class TodayViewModel(
     repository: LeadRepository,
@@ -33,7 +46,8 @@ class TodayViewModel(
         repository.observeLeads(),
         repository.observeCapturedThisWeek(),
         settings.settings,
-    ) { leads, captured, prefs ->
+        repository.observeMetrics(),
+    ) { leads, captured, prefs, metrics ->
         val today = Format.today()
         val open = leads.filter { it.nextFollowUpAt != null && it.salesStage !in ReferenceLists.closedStages }
         TodayUiState(
@@ -43,6 +57,7 @@ class TodayViewModel(
             dueToday = open.filter { it.nextFollowUpAt == today }.sortedBy { it.fullName },
             capturedThisWeek = captured,
             demoMode = prefs.demoMode || !hasRealAi,
+            avgCaptureSeconds = averageCaptureSeconds(metrics),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 

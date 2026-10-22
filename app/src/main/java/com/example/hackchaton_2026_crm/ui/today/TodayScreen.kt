@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
@@ -114,6 +115,7 @@ fun TodayScreen(
                 Text(state.greeting, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(12.dp))
                 CounterRow(state)
+                state.avgCaptureSeconds?.let { TimeSaved(it) }
             }
             if (state.overdue.isEmpty() && state.dueToday.isEmpty()) {
                 item { EmptyToday() }
@@ -141,6 +143,17 @@ fun TodayScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TimeSaved(seconds: Int) {
+    val label = if (seconds < 90) "$seconds s" else "${(seconds + 30) / 60} min"
+    Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.Timer, null, tint = LocalStatusColors.current.ok, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text("Avg $label per lead", fontWeight = FontWeight.Bold)
+        Text("  (vs ~5 min on laptop)", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

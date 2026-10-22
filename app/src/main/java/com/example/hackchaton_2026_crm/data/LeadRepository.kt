@@ -22,6 +22,8 @@ class LeadRepository(private val dao: LeadDao) {
 
     suspend fun getLead(id: Long): Lead? = dao.get(id)
 
+    suspend fun dueOnOrBefore(today: LocalDate): List<Lead> = dao.dueOnOrBefore(today)
+
     suspend fun findByMobile(mobile: String): Lead? = dao.findByMobile(mobile)
 
     suspend fun latestEntry(leadId: Long): FollowUpEntry? = dao.latestEntry(leadId)
