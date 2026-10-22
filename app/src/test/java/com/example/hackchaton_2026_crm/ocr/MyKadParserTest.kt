@@ -96,6 +96,12 @@ class MyKadParserTest {
         }
     }
 
+    @Test fun addressNumberGluedToWord_isSplit_butShortCodesStay() {
+        assertEquals("No 12, Jalan Contoh 3, SS2, 50450 Kuala Lumpur", MyKadParser.parse(
+            listOf("900101-14-1234", "AHMAD BIN ABU", "NO 12, JALAN CONTOH3", "SS2", "50450 KUALA LUMPUR"), today,
+        ).address)
+    }
+
     @Test fun splitName_edgeCases() {
         assertEquals("" to "", splitName(""))
         assertEquals("Aisyah" to "", splitName("Aisyah"))

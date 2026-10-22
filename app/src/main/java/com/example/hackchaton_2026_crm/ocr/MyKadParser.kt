@@ -175,7 +175,7 @@ object MyKadParser {
     }
 
     /** Title case, but keep postcodes, lot numbers and short consonant-only tokens (KL, WP, JLN, SS2) upper. */
-    fun titleCaseAddress(raw: String): String = raw.trim().trim(',').split(' ').filter { it.isNotEmpty() }.joinToString(" ") { w ->
+    fun titleCaseAddress(raw: String): String = raw.trim().trim(',').replace(glued, "$1 $2").split(' ').filter { it.isNotEmpty() }.joinToString(" ") { w ->
         val bare = w.trim(',', '.')
         when {
             bare.any(Char::isDigit) -> w.uppercase()
@@ -183,6 +183,9 @@ object MyKadParser {
             else -> w.lowercase(Locale.ENGLISH).cap()
         }
     }
+
+    /** OCR often glues a house or lane number to the word before it: "CONTOH3" -> "CONTOH 3". Short codes (SS2, USJ2) stay. */
+    private val glued = Regex("""\b([A-Za-z]{4,})(\d{1,3})\b""")
 
     private fun String.cap() = replaceFirstChar { it.titlecase(Locale.ENGLISH) }
 }
