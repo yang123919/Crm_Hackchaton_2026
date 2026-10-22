@@ -1,6 +1,9 @@
 package com.example.hackchaton_2026_crm
 
 import android.app.Application
+import com.example.hackchaton_2026_crm.ai.AiRouter
+import com.example.hackchaton_2026_crm.ai.DemoAiService
+import com.example.hackchaton_2026_crm.ai.GeminiAiService
 import com.example.hackchaton_2026_crm.data.AppDatabase
 import com.example.hackchaton_2026_crm.data.LeadRepository
 import com.example.hackchaton_2026_crm.data.SeedData
@@ -15,6 +18,14 @@ class AppContainer(app: Application) {
     val database = AppDatabase.build(app)
     val leadRepository = LeadRepository(database.leadDao())
     val settingsRepository = SettingsRepository(app)
+
+    /** Real Gemini when GEMINI_API_KEY is set in local.properties; otherwise always Demo mode. */
+    val aiService = AiRouter(
+        settings = settingsRepository,
+        real = BuildConfig.GEMINI_API_KEY.takeIf { it.isNotBlank() }
+            ?.let { GeminiAiService(it, BuildConfig.GEMINI_MODEL) },
+        demo = DemoAiService(),
+    )
 }
 
 class QuickLeadApp : Application() {
