@@ -86,8 +86,23 @@ class GeminiAiService(
                 }
             }
         }
+        // Gemini models return 503 "high demand" in spikes; a busy model fails in a second or two,
+        // so trying the next one keeps the demo going instead of showing an error.
+        var failure: AiException? = null
+        for (name in listOf(model) + FALLBACK_MODELS.filter { it != model }) {
+            try {
+                return generateWith(name, body)
+            } catch (e: AiException) {
+                if (!e.retryable) throw e
+                failure = e
+            }
+        }
+        throw failure ?: AiException("AI unavailable")
+    }
+
+    private suspend fun generateWith(modelName: String, body: JsonObject): String {
         val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
+            .url("https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent")
             .header("x-goog-api-key", apiKey)
             .post(body.toString().toRequestBody(JSON))
             .build()
@@ -96,10 +111,14 @@ class GeminiAiService(
             try {
                 client.newCall(request).execute().use { response ->
                     val text = response.body?.string().orEmpty()
-                    if (!response.isSuccessful) throw AiException("AI error ${response.code}")
+                    if (!response.isSuccessful) {
+                        val code = response.code
+                        throw AiException("AI error $code", retryable = code == 404 || code == 429 || code >= 500)
+                    }
                     text
                 }
             } catch (e: IOException) {
+                // Not retried: a timeout already used the full 30 s.
                 throw AiException("Couldn't reach AI", e)
             }
         }
@@ -120,6 +139,18 @@ class GeminiAiService(
 
     companion object {
         private val JSON = "application/json; charset=utf-8".toMediaType()
+
+        /**
+         * Tried in order after the configured model when it is busy or retired. Checked against a new
+         * free-tier key on 2026-10-23: the 2.5 models are closed to new keys; flash-lite is slow (~20 s)
+         * but rarely busy, so it is last. Model names change over time; update this list when they do.
+         */
+        private val FALLBACK_MODELS = listOf(
+            "gemini-3.5-flash",
+            "gemini-3.6-flash",
+            "gemini-3.7-flash",
+            "gemini-flash-lite-latest",
+        )
 
         private val defaultClient = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)

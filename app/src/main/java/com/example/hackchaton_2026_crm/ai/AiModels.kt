@@ -64,4 +64,5 @@ data class HealthAdvice(
     val explanations: List<String> = emptyList(),
 )
 
-class AiException(message: String, cause: Throwable? = null) : Exception(message, cause)
+/** [retryable]: the model is busy or unavailable (HTTP 404/429/5xx), so another model may still answer. */
+class AiException(message: String, cause: Throwable? = null, val retryable: Boolean = false) : Exception(message, cause)

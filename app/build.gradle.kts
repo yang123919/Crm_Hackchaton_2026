@@ -32,7 +32,7 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"${localProps.getProperty("GEMINI_API_KEY", "")}\"")
         buildConfigField(
             "String", "GEMINI_MODEL",
-            "\"${localProps.getProperty("GEMINI_MODEL", "gemini-flash-latest")}\"",
+            "\"${localProps.getProperty("GEMINI_MODEL", "gemini-3.5-flash")}\"",
         )
     }
 
