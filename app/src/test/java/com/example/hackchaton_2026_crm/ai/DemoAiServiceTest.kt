@@ -86,6 +86,14 @@ class DemoAiServiceTest {
         assertTrue(ai.draftWhatsApp(lead, null, MessageLanguage.BM, "Kelvin").contains("sebut harga"))
     }
 
+    @Test fun whatsApp_regenerateGivesDifferentWording() = runTest {
+        val lead = Lead(firstName = "Aisyah", mobile = "60173228991", product = "Proton Saga",
+            outlet = "CS Insta", salesStage = "Quotation")
+        val drafts = List(3) { ai.draftWhatsApp(lead, null, MessageLanguage.EN, "Kelvin") }
+        assertEquals(3, drafts.toSet().size)
+        drafts.forEach { assertTrue(it.contains("quotation")) } // the actual next step never changes
+    }
+
     @Test fun whatsApp_neverMentionsOverdueDate() = runTest {
         val lead = Lead(firstName = "Ahmad", mobile = "60139876543", product = "Omoda 5 Comfort",
             outlet = "CS Insta", salesStage = "Test Drive", nextFollowUpAt = LocalDate.of(2020, 1, 5))

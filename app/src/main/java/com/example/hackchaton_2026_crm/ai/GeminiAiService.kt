@@ -50,6 +50,8 @@ class GeminiAiService(
         AiPrompts.whatsAppSystem(language, salesperson),
         AiPrompts.whatsAppUser(lead, lastEntry, LocalDate.now(SeedData.ZONE)),
         schema = null,
+        // Creative text: higher than extraction so "Regenerate" gives a fresh wording.
+        temperature = 0.9,
     ).trim()
 
     private inline fun <reified T> decode(text: String): T = try {
@@ -60,7 +62,8 @@ class GeminiAiService(
         throw AiException("AI returned an unexpected format", e)
     }
 
-    private suspend fun generate(system: String, user: String, schema: JsonObject?): String {
+    /** Low [temperature] for field extraction, where the same notes must give the same fields. */
+    private suspend fun generate(system: String, user: String, schema: JsonObject?, temperature: Double = 0.2): String {
         val body = buildJsonObject {
             putJsonObject("systemInstruction") {
                 putJsonArray("parts") { addJsonObject { put("text", system) } }
@@ -72,7 +75,7 @@ class GeminiAiService(
                 }
             }
             putJsonObject("generationConfig") {
-                put("temperature", 0.2)
+                put("temperature", temperature)
                 if (schema != null) {
                     put("responseMimeType", "application/json")
                     put("responseSchema", schema)

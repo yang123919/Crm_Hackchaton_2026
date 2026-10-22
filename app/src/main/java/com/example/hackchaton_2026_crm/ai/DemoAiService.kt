@@ -112,6 +112,10 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
         delay(delayMs / 2)
         // An overdue date would read oddly in a message ("test drive on Sun 18 Oct?"), so skip it.
         val date = lead.nextFollowUpAt?.takeIf { !it.isBefore(LocalDate.now(SeedData.ZONE)) }?.let(shortDate::format)
+        // Rotate wording so "Regenerate" visibly gives a different draft each time.
+        val v = draftCount++
+        val name = lead.fullName
+        val car = lead.product
         return if (language == MessageLanguage.BM) {
             val line = when (lead.salesStage) {
                 "Test Drive" -> "Bila masa yang sesuai untuk pandu uji${date?.let { ", mungkin $it" } ?: ""}?"
@@ -119,8 +123,17 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
                 "Booking" -> "Sekadar peringatan tentang tempahan anda${date?.let { " pada $it" } ?: ""}."
                 else -> "Bila masa yang sesuai untuk kita berbincang?"
             }
-            "Hi ${lead.fullName}, saya $salesperson dari CS Group. Terima kasih atas minat anda " +
-                "terhadap ${lead.product}! $line Jika ada sebarang soalan, beritahu saya ya. - $salesperson"
+            val opening = listOf(
+                "Hi $name, saya $salesperson dari CS Group. Terima kasih atas minat anda terhadap $car!",
+                "Salam $name, $salesperson dari CS Group di sini. Gembira dapat membantu anda dengan $car.",
+                "Hai $name! Ini $salesperson dari CS Group, berkenaan $car yang anda minati.",
+            )
+            val closing = listOf(
+                "Jika ada sebarang soalan, beritahu saya ya.",
+                "Saya sedia membantu bila-bila masa.",
+                "Terima kasih, semoga hari anda baik!",
+            )
+            "${opening[v % opening.size]} $line ${closing[v % closing.size]} - $salesperson"
         } else {
             val line = when (lead.salesStage) {
                 "Test Drive" -> "Would you like to arrange a test drive${date?.let { " on $it" } ?: ""}?"
@@ -128,10 +141,21 @@ class DemoAiService(private val delayMs: Long = 1_200) : AiService {
                 "Booking" -> "Just a reminder about your booking${date?.let { " on $it" } ?: ""}."
                 else -> "When would be a good time to talk?"
             }
-            "Hi ${lead.fullName}, this is $salesperson from CS Group. Thank you for your interest " +
-                "in the ${lead.product}! $line Let me know if you have any questions. - $salesperson"
+            val opening = listOf(
+                "Hi $name, this is $salesperson from CS Group. Thank you for your interest in the $car!",
+                "Hello $name, $salesperson here from CS Group. Great to hear you're keen on the $car.",
+                "Hi $name! $salesperson from CS Group following up on the $car.",
+            )
+            val closing = listOf(
+                "Let me know if you have any questions.",
+                "Happy to help with anything you need.",
+                "Thanks, and have a great day!",
+            )
+            "${opening[v % opening.size]} $line ${closing[v % closing.size]} - $salesperson"
         }
     }
+
+    private var draftCount = 0
 
     // ---- Rules ------------------------------------------------------------------------
 
