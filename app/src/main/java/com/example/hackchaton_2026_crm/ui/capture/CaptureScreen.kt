@@ -30,7 +30,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import com.example.hackchaton_2026_crm.ui.components.MicButton
+import com.example.hackchaton_2026_crm.ui.components.rememberSpeechController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -41,7 +49,7 @@ private val samples = listOf(
     "Mr Lim from Butterworth, wants the Tiggo 8 Pro, no budget yet, send him quotation, WhatsApp him tomorrow.",
 )
 
-/** 2. Capture. Typed input for now; the mic + live transcript is added on top of this screen. */
+/** 2. Capture: speak (live, editable transcript) or type; then Process with AI. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaptureScreen(
@@ -50,6 +58,8 @@ fun CaptureScreen(
 ) {
     val startedAt by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
     var text by rememberSaveable { mutableStateOf("") }
+    val speech = rememberSpeechController()
+    val focus = remember { FocusRequester() }
 
     Scaffold(
         topBar = {
@@ -62,7 +72,7 @@ fun CaptureScreen(
         },
         bottomBar = {
             Button(
-                onClick = { onProcess(text.trim(), startedAt) },
+                onClick = { speech.stop(); onProcess(text.trim(), startedAt) },
                 enabled = text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
                     .padding(16.dp).height(56.dp),
@@ -81,13 +91,23 @@ fun CaptureScreen(
                 "Tell me about the customer: name, phone, car, budget, next step.",
                 style = MaterialTheme.typography.titleMedium,
             )
+            MicButton(speech, text, onTextChange = { text = it }, modifier = Modifier.align(Alignment.CenterHorizontally))
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
-                label = { Text("Notes") },
+                onValueChange = {
+                    // Typing while the mic is on would be overwritten by the next phrase.
+                    speech.stop()
+                    text = it
+                },
+                label = { Text(if (speech.listening) "Live transcript" else "Notes (editable)") },
                 minLines = 5,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
             )
+            TextButton(onClick = { speech.stop(); focus.requestFocus() }) {
+                Icon(Icons.Filled.Keyboard, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Type instead")
+            }
             Text("Try a sample", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             samples.forEach { sample ->
                 SuggestionChip(
