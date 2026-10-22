@@ -102,6 +102,39 @@ class MyKadParserTest {
         ).address)
     }
 
+    /** A real-looking card: number first, then a plain name, then the address. OCR garbled the header. */
+    @Test fun garbledHeaderAboveTheNumber_isNotTheName() {
+        val info = MyKadParser.parse(
+            listOf(
+                "KAD PENGENALAN", "MALAYSIA", "MYKADG IDENTITYGARD",
+                "050905-10-2913",
+                "ONG KAI JIN",
+                "19A JALAN KP 21", "TAMAN KRUBONG PERDANA", "75260 MELAKA", "MELAKA",
+                "WARGANEGARA", "LELAKI",
+            ),
+            today,
+        )
+        assertEquals("Ong Kai Jin", info.fullName)
+        assertEquals("050905-10-2913", info.icNumber)
+        assertEquals("Male", info.gender)
+        assertEquals(LocalDate.of(2005, 9, 5), info.birthDate)
+        assertEquals("19A Jalan KP 21, Taman Krubong Perdana, 75260 Melaka, Melaka", info.address)
+        assertEquals("Ong Kai", info.firstName)
+        assertEquals("Jin", info.lastName)
+    }
+
+    @Test fun headerWordsWithOcrSlips_areIgnored() {
+        val info = MyKadParser.parse(
+            listOf("KAD PENGENALAN MALAYSIA", "IDENTITY CARD MyKad", "IDENTIIY CARO", "050905-10-2913", "ONG KAI JIN", "19A JALAN KP 21", "MELAKA"),
+            today,
+        )
+        assertEquals("Ong Kai Jin", info.fullName)
+    }
+
+    @Test fun nameContainingAHeaderLikeWord_isKept() {
+        assertEquals("Malaya Ahmad", MyKadParser.parse(listOf("050905-10-2913", "MALAYA AHMAD", "1 JALAN A", "MELAKA"), today).fullName)
+    }
+
     @Test fun splitName_edgeCases() {
         assertEquals("" to "", splitName(""))
         assertEquals("Aisyah" to "", splitName("Aisyah"))

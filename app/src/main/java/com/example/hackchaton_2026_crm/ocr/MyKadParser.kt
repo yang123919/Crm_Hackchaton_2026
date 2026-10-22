@@ -1,5 +1,6 @@
 package com.example.hackchaton_2026_crm.ocr
 
+import com.example.hackchaton_2026_crm.ai.Normalizer
 import java.time.LocalDate
 import java.util.Locale
 
@@ -74,11 +75,18 @@ object MyKadParser {
         }
 
         // ---- Name and address from what is left
-        val rest = cleaned.filter { it !== icHit?.first }
-            .map(::stripNoiseWords)
-            .filter { it.isNotEmpty() && !isMostlyNoise(it) }
+        val icIdx = cleaned.indexOfFirst { it === icHit?.first }
+        val restRows = cleaned.withIndex()
+            .filter { it.index != icIdx }
+            .map { it.index to stripNoiseWords(it.value) }
+            .filter { (_, text) -> text.isNotEmpty() && !isMostlyNoise(text) }
+        val rest = restRows.map { it.second }
 
-        val firstNameLine = rest.indexOfFirst(::looksLikeName)
+        // On a MyKad the name sits right below the IC number, under the header text ("MyKad",
+        // "IDENTITY CARD") that OCR often garbles. So prefer the first name-like row after the number,
+        // and only fall back to one above it (a photo taken the other way up).
+        val firstNameLine = restRows.indexOfFirst { (row, text) -> row > icIdx && looksLikeName(text) }
+            .takeIf { it >= 0 } ?: rest.indexOfFirst(::looksLikeName)
         val nameLines = mutableListOf<String>()
         if (firstNameLine >= 0) {
             var i = firstNameLine
@@ -143,7 +151,21 @@ object MyKadParser {
 
     /** "ISLAM LELAKI" or "WARGANEGARA" on a line of its own are not part of the name or address. */
     private fun stripNoiseWords(line: String): String =
-        line.split(' ').filter { it.uppercase().trim(',', '.') !in noiseWords }.joinToString(" ").trim()
+        line.split(' ').filter { !isNoiseToken(it) }.joinToString(" ").trim()
+
+    /** Words printed on every card; OCR often garbles them ("MYKADG", "IDENTITYGARD"), so allow near misses. */
+    private val headerWords = listOf("MYKAD", "IDENTITY", "PENGENALAN", "MALAYSIA", "WARGANEGARA", "PEREMPUAN", "LELAKI")
+
+    private fun isNoiseToken(raw: String): Boolean {
+        val t = raw.uppercase().filter(Char::isLetter)
+        if (t.isEmpty()) return false
+        if (t in noiseWords) return true
+        if (t.length < 5) return false
+        return headerWords.any { h ->
+            t.contains(h) || (kotlin.math.abs(t.length - h.length) <= 1 &&
+                Normalizer.editDistance(t, h) <= if (h.length >= 8) 2 else 1)
+        }
+    }
 
     private fun isMostlyNoise(line: String) = line.count(Char::isLetterOrDigit) < 3
 
