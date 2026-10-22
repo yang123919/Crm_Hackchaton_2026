@@ -33,5 +33,9 @@ class LeadRepository(private val dao: LeadDao) {
 
     suspend fun addEntry(entry: FollowUpEntry) = dao.insertEntry(entry)
 
+    /** Saves a follow-up log entry and the lead's new stage / next step together. */
+    suspend fun addFollowUp(lead: Lead, entry: FollowUpEntry) =
+        dao.updateLeadWithEntry(lead.copy(updatedAt = Instant.now()), entry)
+
     suspend fun recordMetric(metric: CaptureMetric) = dao.insertMetric(metric)
 }

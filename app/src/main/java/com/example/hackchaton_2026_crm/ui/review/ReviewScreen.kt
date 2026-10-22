@@ -1,6 +1,5 @@
 package com.example.hackchaton_2026_crm.ui.review
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
@@ -28,40 +25,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -315,29 +297,13 @@ private fun TradeIn(form: LeadForm, error: String?, onEdit: (LeadField, LeadForm
     }
 }
 
-// ---- Field building blocks -----------------------------------------------------------------
-
-/** Label with ✨ (AI-filled) and ! (please check) markers. */
-@Composable
-private fun FieldLabel(text: String, form: LeadForm, field: LeadField, modifier: Modifier = Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Text(text)
-        if (field in form.aiFilled) {
-            Spacer(Modifier.width(4.dp))
-            AiMark()
-        }
-        if (field in form.lowConfidence) {
-            Text("  !", fontWeight = FontWeight.Bold, color = LocalStatusColors.current.dueToday)
-        }
-    }
-}
+// ---- Field wrappers: read the ✨ / ! markers from the form ----------------------------------
 
 @Composable
-private fun fieldColors(form: LeadForm, field: LeadField) =
-    if (field in form.lowConfidence) {
-        val amber = LocalStatusColors.current.dueToday
-        OutlinedTextFieldDefaults.colors(unfocusedBorderColor = amber, focusedBorderColor = amber)
-    } else OutlinedTextFieldDefaults.colors()
+private fun FieldLabel(text: String, form: LeadForm, field: LeadField, modifier: Modifier = Modifier) =
+    com.example.hackchaton_2026_crm.ui.components.FieldLabel(
+        text, field in form.aiFilled, field in form.lowConfidence, modifier,
+    )
 
 @Composable
 private fun FormTextField(
@@ -350,25 +316,10 @@ private fun FormTextField(
     modifier: Modifier = Modifier.fillMaxWidth(),
     singleLine: Boolean = true,
     onChange: (String) -> Unit,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { FieldLabel(label, form, field) },
-        isError = error != null,
-        supportingText = error?.let { { Text(it) } },
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = keyboard,
-            capitalization = if (keyboard == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
-        ),
-        colors = fieldColors(form, field),
-        modifier = modifier,
-    )
-}
+) = com.example.hackchaton_2026_crm.ui.components.FormTextField(
+    label, value, field in form.aiFilled, field in form.lowConfidence, error, keyboard, modifier, singleLine, onChange,
+)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Dropdown(
     label: String,
@@ -378,37 +329,10 @@ private fun Dropdown(
     field: LeadField,
     error: String?,
     onSelect: (String) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { FieldLabel(label, form, field) },
-            placeholder = { Text("Select…") },
-            isError = error != null,
-            supportingText = error?.let { { Text(it) } },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            colors = fieldColors(form, field),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = { onSelect(option); expanded = false },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                )
-            }
-        }
-    }
-}
+) = com.example.hackchaton_2026_crm.ui.components.Dropdown(
+    label, value, options, field in form.aiFilled, field in form.lowConfidence, error, onSelect,
+)
 
-private const val DAY_MS = 86_400_000L
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateField(
     label: String,
@@ -418,44 +342,6 @@ private fun DateField(
     error: String?,
     minDate: LocalDate?,
     onSelect: (LocalDate?) -> Unit,
-) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    Box {
-        OutlinedTextField(
-            value = value?.let(Format::shortDate)?.let { "$it ${value.year}" } ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { FieldLabel(label, form, field) },
-            placeholder = { Text("Pick a date") },
-            trailingIcon = { Icon(Icons.Filled.CalendarMonth, null) },
-            isError = error != null,
-            supportingText = error?.let { { Text(it) } },
-            colors = fieldColors(form, field),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        // Read-only text fields swallow clicks; overlay a click target.
-        Box(Modifier.matchParentSize().clickable { open = true })
-    }
-    if (open) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = value?.toEpochDay()?.times(DAY_MS),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long) =
-                    minDate == null || utcTimeMillis / DAY_MS >= minDate.toEpochDay()
-            },
-        )
-        DatePickerDialog(
-            onDismissRequest = { open = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onSelect(pickerState.selectedDateMillis?.let { LocalDate.ofEpochDay(it / DAY_MS) })
-                    open = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { onSelect(null); open = false }) { Text("Clear") }
-            },
-        ) { DatePicker(pickerState) }
-    }
-}
+) = com.example.hackchaton_2026_crm.ui.components.DateField(
+    label, value, field in form.aiFilled, field in form.lowConfidence, error, minDate, onSelect,
+)

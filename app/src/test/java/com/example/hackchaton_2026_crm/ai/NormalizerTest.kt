@@ -111,6 +111,24 @@ class NormalizerTest {
         assertFalse(LeadField.OUTLET in n.aiFilled)
     }
 
+    @Test fun normalizeFollowUp_keepsStageAndDropsPastDate() {
+        val n = Normalizer.normalizeFollowUp(
+            FollowUpExtraction(FollowUpPart(" OK with price. ", "Collect booking", "2026-10-01"), "Made up stage"),
+            currentStage = "Test Drive", today = today,
+        )
+        assertEquals("OK with price.", n.summary)
+        assertEquals("Test Drive", n.salesStage)
+        assertNull(n.nextDate)
+        assertTrue(n.dateDropped)
+
+        val ok = Normalizer.normalizeFollowUp(
+            FollowUpExtraction(FollowUpPart("x", "y", "2026-10-24"), "booking"), "Test Drive", today,
+        )
+        assertEquals("Booking", ok.salesStage)
+        assertEquals(LocalDate.of(2026, 10, 24), ok.nextDate)
+        assertFalse(ok.dateDropped)
+    }
+
     @Test fun normalizeLead_flagsInvalidMobile() {
         val n = Normalizer.normalizeLead(LeadExtraction(mobile = "1732289910"), today)
         assertEquals("601732289910", n.mobile)

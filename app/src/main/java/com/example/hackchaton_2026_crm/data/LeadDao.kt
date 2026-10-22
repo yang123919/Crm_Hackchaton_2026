@@ -53,6 +53,12 @@ interface LeadDao {
         return id
     }
 
+    @Transaction
+    suspend fun updateLeadWithEntry(lead: Lead, entry: FollowUpEntry) {
+        update(lead)
+        insertEntry(entry)
+    }
+
     @Insert
     suspend fun insertMetric(metric: CaptureMetric)
 

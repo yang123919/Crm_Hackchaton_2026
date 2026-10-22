@@ -57,6 +57,15 @@ data class NormalizedLead(
     val lowConfidence: Set<LeadField> = emptySet(),
 )
 
+/** AI follow-up update after validation; [dateDropped] = the AI's date was unusable (past or garbled). */
+data class NormalizedFollowUp(
+    val summary: String,
+    val nextAction: String,
+    val nextDate: LocalDate?,
+    val salesStage: String,
+    val dateDropped: Boolean,
+)
+
 object Normalizer {
 
     // ---- Phone ------------------------------------------------------------------------
@@ -254,6 +263,20 @@ object Normalizer {
     fun isValidEmail(email: String): Boolean = email.isBlank() || emailRegex.matches(email.trim())
 
     fun year(value: Int?, today: LocalDate): Int? = value?.takeIf { it in 1970..today.year + 1 }
+
+    // ---- Follow-up update -------------------------------------------------------------
+
+    /** Unknown or missing stage keeps the lead's [currentStage]; past dates are dropped. */
+    fun normalizeFollowUp(e: FollowUpExtraction, currentStage: String, today: LocalDate): NormalizedFollowUp {
+        val date = followUpDate(e.followUp.nextDate, today)
+        return NormalizedFollowUp(
+            summary = e.followUp.summary.trim(),
+            nextAction = e.followUp.nextAction.trim(),
+            nextDate = date,
+            salesStage = matchOption(e.suggestedSalesStage, ReferenceLists.salesStages) ?: currentStage,
+            dateDropped = date == null && !e.followUp.nextDate.isNullOrBlank(),
+        )
+    }
 
     // ---- Whole lead -------------------------------------------------------------------
 

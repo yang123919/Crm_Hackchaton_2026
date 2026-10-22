@@ -13,6 +13,7 @@ import com.example.hackchaton_2026_crm.ui.capture.CaptureScreen
 import com.example.hackchaton_2026_crm.ui.lead.LeadDetailScreen
 import com.example.hackchaton_2026_crm.ui.review.ReviewScreen
 import com.example.hackchaton_2026_crm.ui.today.TodayScreen
+import com.example.hackchaton_2026_crm.ui.update.FollowUpScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -20,6 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class LeadDetailRoute(val leadId: Long)
 @Serializable object CaptureRoute
 @Serializable data class ReviewRoute(val transcript: String, val startedAtMillis: Long)
+@Serializable data class FollowUpRoute(val leadId: Long)
 
 @Composable
 fun QuickLeadNavHost() {
@@ -67,7 +69,16 @@ fun QuickLeadNavHost() {
             LeadDetailScreen(
                 onBack = { navController.popBackStack() },
                 onWhatsApp = openWhatsApp,
-                onVoiceUpdate = {},
+                onVoiceUpdate = { navController.navigate(FollowUpRoute(it)) },
+            )
+        }
+        composable<FollowUpRoute> {
+            FollowUpScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = {
+                    Toast.makeText(context, "Added to history", Toast.LENGTH_SHORT).show()
+                    navController.popBackStack()
+                },
             )
         }
     }
